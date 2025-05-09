@@ -64,7 +64,6 @@ const Index = () => {
   
   // Customer input fields
   const [customerName, setCustomerName] = useState('');
-  const [customersToAdd, setCustomersToAdd] = useState(1);
   
   // Animation frame reference
   const animationRef = useRef<number>();
@@ -238,18 +237,6 @@ const Index = () => {
     const randomNames = ["Alex", "Sam", "Jamie", "Taylor", "Jordan", "Casey", "Avery", "Riley", "Quinn", "Morgan"];
     const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] + " " + nextCustomerId;
     addCustomerWithName(randomName);
-  };
-  
-  // Add multiple customers at once
-  const addMultipleCustomers = () => {
-    const count = customersToAdd > 0 ? customersToAdd : 1;
-    for (let i = 0; i < count; i++) {
-      addRandomCustomer();
-    }
-    toast({
-      title: "Customers Added",
-      description: `Added ${count} new customers to the salon`
-    });
   };
   
   // Process a time step
@@ -563,29 +550,6 @@ const Index = () => {
                         value={[arrivalRate]}
                         onValueChange={(values) => setArrivalRate(values[0])}
                       />
-                    </div>
-                    
-                    {/* Add Multiple Customers Control */}
-                    <div className="space-y-2">
-                      <Label htmlFor="customersToAdd">Add Multiple Customers:</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="customersToAdd"
-                          type="number"
-                          min="1"
-                          max="20"
-                          value={customersToAdd}
-                          onChange={(e) => setCustomersToAdd(Number(e.target.value))}
-                          className="w-24"
-                        />
-                        <Button 
-                          onClick={addMultipleCustomers} 
-                          className="flex items-center gap-2"
-                        >
-                          <Users className="h-4 w-4" />
-                          Add Customers
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </div>
