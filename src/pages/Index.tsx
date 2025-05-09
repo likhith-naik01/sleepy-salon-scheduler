@@ -324,8 +324,9 @@ const Index = () => {
       if (customer.state === CustomerState.GETTING_HAIRCUT && customer.timeServed) {
         const barberId = customer.servedBy! - 1;
         
-        // If haircut is finished
+        // If haircut is finished (check if service time has elapsed)
         if (newTime - customer.timeServed >= serviceTime) {
+          // Mark customer as served and add to finished list
           const finishedCustomer = {
             ...customer,
             state: CustomerState.SERVED,
@@ -333,7 +334,7 @@ const Index = () => {
           };
           finishedCustomers.push(finishedCustomer);
           
-          // Free up the barber
+          // Check if there's another waiting customer
           if (waitingCustomers.length > 0) {
             // Get the next waiting customer
             const nextCustomer = waitingCustomers[0];
@@ -345,7 +346,7 @@ const Index = () => {
               waitingPosition: undefined
             };
             
-            // Update barber state
+            // Update barber state - keep working with new customer
             updatedBarbers[barberId] = {
               ...updatedBarbers[barberId],
               servingCustomerId: nextCustomer.id,
@@ -380,7 +381,8 @@ const Index = () => {
             
             toast({
               title: "Haircut Complete",
-              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping.`
+              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`,
+              variant: "success"
             });
           }
         } else {
