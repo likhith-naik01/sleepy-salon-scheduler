@@ -9,6 +9,14 @@ import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, User, Users, Scissors, Info, Play } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 
 // Customer and Barber States
 enum CustomerState {
@@ -110,21 +118,84 @@ const Index = () => {
     initializeSimulation();
   };
   
-  // Start simulation
-  const startSimulation = () => {
+  // Start haircuts button function
+  const startHaircuts = () => {
+    // Check if we have any barbers
     if (barbers.length === 0) {
       initializeSimulation();
     }
-    setIsRunning(true);
-    lastTimeRef.current = performance.now();
-    animationRef.current = requestAnimationFrame(animationLoop);
-  };
-  
-  // Pause simulation
-  const pauseSimulation = () => {
-    setIsRunning(false);
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+    
+    // Get all sleeping barbers
+    const sleepingBarberIndices = barbers
+      .map((barber, index) => barber.state === BarberState.SLEEPING ? index : -1)
+      .filter(index => index !== -1);
+    
+    if (sleepingBarberIndices.length === 0) {
+      toast({
+        title: "All barbers are working",
+        description: "All barbers are currently busy serving customers.",
+      });
+      return;
+    }
+    
+    // For each sleeping barber, assign a customer if available
+    const updatedBarbers = [...barbers];
+    const servedCustomerIds: number[] = [];
+    
+    for (const barberIndex of sleepingBarberIndices) {
+      if (waitingCustomers.length > 0) {
+        // Get next waiting customer
+        const nextCustomer = waitingCustomers[0];
+        
+        // Update barber state
+        updatedBarbers[barberIndex] = {
+          ...updatedBarbers[barberIndex],
+          state: BarberState.WORKING,
+          servingCustomerId: nextCustomer.id,
+          currentServiceStartTime: currentTime,
+          totalCustomersServed: updatedBarbers[barberIndex].totalCustomersServed + 1
+        };
+        
+        // Mark this customer as being served
+        const updatedNextCustomer = {
+          ...nextCustomer,
+          state: CustomerState.GETTING_HAIRCUT,
+          timeServed: currentTime,
+          servedBy: barberIndex + 1,
+          waitingPosition: undefined
+        };
+        
+        // Add to serving list and track for removal from waiting
+        servedCustomerIds.push(nextCustomer.id);
+        setCurrentCustomers(prev => [...prev, updatedNextCustomer]);
+        
+        toast({
+          title: "Haircut Started",
+          description: `${nextCustomer.name} is now being served by Barber #${barberIndex + 1}.`,
+          variant: "success"
+        });
+        
+        // Remove this customer from waiting list
+        const remainingWaiting = waitingCustomers.filter(c => c.id !== nextCustomer.id);
+        
+        // Update waiting positions for remaining customers
+        const updatedWaiting = remainingWaiting.map((customer, idx) => ({
+          ...customer,
+          waitingPosition: idx
+        }));
+        
+        setWaitingCustomers(updatedWaiting);
+      }
+    }
+    
+    // Update barber states
+    setBarbers(updatedBarbers);
+    
+    // Start simulation timer if it's not already running
+    if (!isRunning) {
+      setIsRunning(true);
+      lastTimeRef.current = performance.now();
+      animationRef.current = requestAnimationFrame(animationLoop);
     }
   };
   
@@ -562,16 +633,14 @@ const Index = () => {
                   <Button variant="outline" onClick={resetSimulation}>
                     Reset
                   </Button>
-                  {isRunning ? (
-                    <Button onClick={pauseSimulation}>
-                      Pause
-                    </Button>
-                  ) : (
-                    <Button onClick={startSimulation} className="flex items-center gap-2">
-                      <Play className="h-4 w-4" />
-                      {barbers.length === 0 ? "Start" : "Resume"}
-                    </Button>
-                  )}
+                  <Button 
+                    variant="success" 
+                    onClick={startHaircuts} 
+                    className="flex items-center gap-2"
+                  >
+                    <Scissors className="h-4 w-4" />
+                    Start Haircuts
+                  </Button>
                 </div>
               </CardFooter>
             </Card>
@@ -675,6 +744,37 @@ const Index = () => {
                     <div className="text-lg font-bold">{averageWaitTime.toFixed(1)}s</div>
                     <div className="text-sm text-gray-600">Avg Wait Time</div>
                   </div>
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="font-medium mb-3">Recent Completed Haircuts</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Barber</TableHead>
+                        <TableHead>Wait Time</TableHead>
+                        <TableHead>Service Time</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {servedCustomers.slice(-5).reverse().map(customer => (
+                        <TableRow key={customer.id}>
+                          <TableCell className="font-medium">{customer.name}</TableCell>
+                          <TableCell>#{customer.servedBy}</TableCell>
+                          <TableCell>{((customer.timeServed || 0) - customer.timeArrived).toFixed(1)}s</TableCell>
+                          <TableCell>{((customer.timeLeft || 0) - (customer.timeServed || 0)).toFixed(1)}s</TableCell>
+                        </TableRow>
+                      ))}
+                      {servedCustomers.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-4 text-gray-500">
+                            No customers have been served yet
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
