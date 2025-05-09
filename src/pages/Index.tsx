@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Info, Save, Play, Download, Upload } from "lucide-react";
+import { Clock, User, Users, Scissors, Info, Play } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Customer and Barber States
@@ -43,22 +43,6 @@ interface Barber {
   currentServiceStartTime?: number;
 }
 
-// Simulation state interface for saving/loading
-interface SimulationState {
-  numBarbers: number;
-  numChairs: number;
-  serviceTime: number;
-  arrivalRate: number;
-  simulationSpeed: number;
-  currentTime: number;
-  nextCustomerId: number;
-  barbers: Barber[];
-  waitingCustomers: Customer[];
-  currentCustomers: Customer[];
-  servedCustomers: Customer[];
-  turnedAwayCustomers: Customer[];
-}
-
 // Main component
 const Index = () => {
   // Simulation parameters
@@ -85,9 +69,6 @@ const Index = () => {
   // Animation frame reference
   const animationRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
-  
-  // File input ref for loading saved state
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Metrics
   const averageWaitTime = React.useMemo(() => {
@@ -312,7 +293,8 @@ const Index = () => {
             updatedBarbers[barberId] = {
               ...updatedBarbers[barberId],
               servingCustomerId: nextCustomer.id,
-              currentServiceStartTime: newTime
+              currentServiceStartTime: newTime,
+              totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
             };
             
             // Add customer to currently being served
@@ -366,85 +348,6 @@ const Index = () => {
     // Add random customer after state update if probability hits and simulation is running
     if (shouldAddCustomer && isRunning) {
       addRandomCustomer();
-    }
-  };
-  
-  // Save simulation state
-  const saveSimulation = () => {
-    const simulationState: SimulationState = {
-      numBarbers,
-      numChairs,
-      serviceTime,
-      arrivalRate,
-      simulationSpeed,
-      currentTime,
-      nextCustomerId,
-      barbers,
-      waitingCustomers,
-      currentCustomers,
-      servedCustomers,
-      turnedAwayCustomers
-    };
-    
-    const stateBlob = new Blob([JSON.stringify(simulationState)], { type: 'application/json' });
-    const url = URL.createObjectURL(stateBlob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `barber-simulation-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Simulation Saved",
-      description: "Your current simulation state has been downloaded"
-    });
-  };
-  
-  // Load simulation state
-  const loadSimulation = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const simulationState: SimulationState = JSON.parse(content);
-        
-        // Restore all state
-        setNumBarbers(simulationState.numBarbers);
-        setNumChairs(simulationState.numChairs);
-        setServiceTime(simulationState.serviceTime);
-        setArrivalRate(simulationState.arrivalRate);
-        setSimulationSpeed(simulationState.simulationSpeed);
-        setCurrentTime(simulationState.currentTime);
-        setNextCustomerId(simulationState.nextCustomerId);
-        setBarbers(simulationState.barbers);
-        setWaitingCustomers(simulationState.waitingCustomers);
-        setCurrentCustomers(simulationState.currentCustomers);
-        setServedCustomers(simulationState.servedCustomers);
-        setTurnedAwayCustomers(simulationState.turnedAwayCustomers);
-        
-        toast({
-          title: "Simulation Loaded",
-          description: "Your saved simulation state has been restored"
-        });
-      } catch (error) {
-        toast({
-          title: "Error Loading File",
-          description: "The selected file is not a valid simulation state",
-          variant: "destructive"
-        });
-      }
-    };
-    reader.readAsText(file);
-    
-    // Reset input to allow loading the same file again
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
   
@@ -616,33 +519,6 @@ const Index = () => {
                           +
                         </Button>
                       </div>
-                    </div>
-                    
-                    {/* Save/Load Buttons */}
-                    <div className="flex gap-2 mt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={saveSimulation} 
-                        className="flex items-center gap-2"
-                      >
-                        <Save className="h-4 w-4" />
-                        Save State
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => fileInputRef.current?.click()} 
-                        className="flex items-center gap-2"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Load State
-                      </Button>
-                      <input 
-                        ref={fileInputRef}
-                        type="file" 
-                        accept=".json" 
-                        onChange={loadSimulation} 
-                        className="hidden" 
-                      />
                     </div>
                   </div>
                   
