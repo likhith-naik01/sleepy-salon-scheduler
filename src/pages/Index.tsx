@@ -329,6 +329,7 @@ const Index = () => {
     let updatedWaitingCustomers = [...waitingCustomers];
     if (waitingCustomers.length > 0 && 
         finishedCustomers.length > 0) {
+      // Remove first customer and update positions for remaining customers
       updatedWaitingCustomers = waitingCustomers.slice(1).map((c, idx) => ({
         ...c,
         waitingPosition: idx
@@ -339,11 +340,16 @@ const Index = () => {
     const arrivalProbability = (arrivalRate / 60) * timeStep;
     const shouldAddCustomer = Math.random() < arrivalProbability;
     
+    // Update state with all changes
     setCurrentTime(newTime);
     setBarbers(updatedBarbers);
     setCurrentCustomers(stillServingCustomers);
     setWaitingCustomers(updatedWaitingCustomers);
-    setServedCustomers(prev => [...prev, ...finishedCustomers]);
+    
+    // Add newly served customers to the statistics immediately
+    if (finishedCustomers.length > 0) {
+      setServedCustomers(prev => [...prev, ...finishedCustomers]);
+    }
     
     // Add random customer after state update if probability hits and simulation is running
     if (shouldAddCustomer && isRunning) {
