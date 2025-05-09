@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -172,7 +171,6 @@ const Index = () => {
         toast({
           title: "Haircut Started",
           description: `${nextCustomer.name} is now being served by Barber #${barberIndex + 1}.`,
-          variant: "success"
         });
         
         // Remove this customer from waiting list
@@ -362,6 +360,15 @@ const Index = () => {
               title: "Haircut Complete",
               description: `${customer.name} finished their haircut. ${nextCustomer.name} is now being served by Barber #${barberId + 1}.`
             });
+            
+            // Update waiting queue by removing the first customer
+            setWaitingCustomers(prev => {
+              const newWaiting = prev.slice(1).map((c, idx) => ({
+                ...c,
+                waitingPosition: idx
+              }));
+              return newWaiting;
+            });
           } else {
             // No customers waiting, barber goes to sleep
             updatedBarbers[barberId] = {
@@ -383,26 +390,10 @@ const Index = () => {
       }
     });
     
-    // Update waiting queue by removing the first customer if they were called
-    let updatedWaitingCustomers = [...waitingCustomers];
-    if (waitingCustomers.length > 0 && 
-        finishedCustomers.length > 0) {
-      // Remove first customer and update positions for remaining customers
-      updatedWaitingCustomers = waitingCustomers.slice(1).map((c, idx) => ({
-        ...c,
-        waitingPosition: idx
-      }));
-    }
-    
-    // Random customer arrival based on arrival rate
-    const arrivalProbability = (arrivalRate / 60) * timeStep;
-    const shouldAddCustomer = Math.random() < arrivalProbability;
-    
     // Update state with all changes
     setCurrentTime(newTime);
     setBarbers(updatedBarbers);
     setCurrentCustomers(stillServingCustomers);
-    setWaitingCustomers(updatedWaitingCustomers);
     
     // Add newly served customers to the statistics immediately
     if (finishedCustomers.length > 0) {
@@ -410,7 +401,7 @@ const Index = () => {
     }
     
     // Add random customer after state update if probability hits and simulation is running
-    if (shouldAddCustomer && isRunning) {
+    if (Math.random() < (arrivalRate / 60) * timeStep && isRunning) {
       addRandomCustomer();
     }
   };
