@@ -382,7 +382,6 @@ const Index = () => {
             toast({
               title: "Haircut Complete",
               description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`,
-              variant: "success"
             });
           }
         } else {
