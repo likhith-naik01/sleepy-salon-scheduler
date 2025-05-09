@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Info } from "lucide-react";
+import { Clock, User, Users, Scissors, Info, Save, Play, Download, Upload } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Customer and Barber States
@@ -43,6 +42,22 @@ interface Barber {
   currentServiceStartTime?: number;
 }
 
+// Simulation state interface for saving/loading
+interface SimulationState {
+  numBarbers: number;
+  numChairs: number;
+  serviceTime: number;
+  arrivalRate: number;
+  simulationSpeed: number;
+  currentTime: number;
+  nextCustomerId: number;
+  barbers: Barber[];
+  waitingCustomers: Customer[];
+  currentCustomers: Customer[];
+  servedCustomers: Customer[];
+  turnedAwayCustomers: Customer[];
+}
+
 // Main component
 const Index = () => {
   // Simulation parameters
@@ -62,12 +77,16 @@ const Index = () => {
   const [servedCustomers, setServedCustomers] = useState<Customer[]>([]);
   const [turnedAwayCustomers, setTurnedAwayCustomers] = useState<Customer[]>([]);
   
-  // Booking form state
+  // Customer input fields
   const [customerName, setCustomerName] = useState('');
+  const [customersToAdd, setCustomersToAdd] = useState(1);
   
   // Animation frame reference
   const animationRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
+  
+  // File input ref for loading saved state
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Metrics
   const averageWaitTime = React.useMemo(() => {
@@ -239,6 +258,18 @@ const Index = () => {
     addCustomerWithName(randomName);
   };
   
+  // Add multiple customers at once
+  const addMultipleCustomers = () => {
+    const count = customersToAdd > 0 ? customersToAdd : 1;
+    for (let i = 0; i < count; i++) {
+      addRandomCustomer();
+    }
+    toast({
+      title: "Customers Added",
+      description: `Added ${count} new customers to the salon`
+    });
+  };
+  
   // Process a time step
   const processTimeStep = (timeStep: number) => {
     if (!isRunning) return;
@@ -334,6 +365,85 @@ const Index = () => {
     // Add random customer after state update if probability hits and simulation is running
     if (shouldAddCustomer && isRunning) {
       addRandomCustomer();
+    }
+  };
+  
+  // Save simulation state
+  const saveSimulation = () => {
+    const simulationState: SimulationState = {
+      numBarbers,
+      numChairs,
+      serviceTime,
+      arrivalRate,
+      simulationSpeed,
+      currentTime,
+      nextCustomerId,
+      barbers,
+      waitingCustomers,
+      currentCustomers,
+      servedCustomers,
+      turnedAwayCustomers
+    };
+    
+    const stateBlob = new Blob([JSON.stringify(simulationState)], { type: 'application/json' });
+    const url = URL.createObjectURL(stateBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `barber-simulation-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Simulation Saved",
+      description: "Your current simulation state has been downloaded"
+    });
+  };
+  
+  // Load simulation state
+  const loadSimulation = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const simulationState: SimulationState = JSON.parse(content);
+        
+        // Restore all state
+        setNumBarbers(simulationState.numBarbers);
+        setNumChairs(simulationState.numChairs);
+        setServiceTime(simulationState.serviceTime);
+        setArrivalRate(simulationState.arrivalRate);
+        setSimulationSpeed(simulationState.simulationSpeed);
+        setCurrentTime(simulationState.currentTime);
+        setNextCustomerId(simulationState.nextCustomerId);
+        setBarbers(simulationState.barbers);
+        setWaitingCustomers(simulationState.waitingCustomers);
+        setCurrentCustomers(simulationState.currentCustomers);
+        setServedCustomers(simulationState.servedCustomers);
+        setTurnedAwayCustomers(simulationState.turnedAwayCustomers);
+        
+        toast({
+          title: "Simulation Loaded",
+          description: "Your saved simulation state has been restored"
+        });
+      } catch (error) {
+        toast({
+          title: "Error Loading File",
+          description: "The selected file is not a valid simulation state",
+          variant: "destructive"
+        });
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input to allow loading the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
   
@@ -506,6 +616,33 @@ const Index = () => {
                         </Button>
                       </div>
                     </div>
+                    
+                    {/* Save/Load Buttons */}
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={saveSimulation} 
+                        className="flex items-center gap-2"
+                      >
+                        <Save className="h-4 w-4" />
+                        Save State
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => fileInputRef.current?.click()} 
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Load State
+                      </Button>
+                      <input 
+                        ref={fileInputRef}
+                        type="file" 
+                        accept=".json" 
+                        onChange={loadSimulation} 
+                        className="hidden" 
+                      />
+                    </div>
                   </div>
                   
                   <div className="space-y-4">
@@ -544,6 +681,29 @@ const Index = () => {
                         onValueChange={(values) => setArrivalRate(values[0])}
                       />
                     </div>
+                    
+                    {/* Add Multiple Customers Control */}
+                    <div className="space-y-2">
+                      <Label htmlFor="customersToAdd">Add Multiple Customers:</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="customersToAdd"
+                          type="number"
+                          min="1"
+                          max="20"
+                          value={customersToAdd}
+                          onChange={(e) => setCustomersToAdd(Number(e.target.value))}
+                          className="w-24"
+                        />
+                        <Button 
+                          onClick={addMultipleCustomers} 
+                          className="flex items-center gap-2"
+                        >
+                          <Users className="h-4 w-4" />
+                          Add Customers
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -560,7 +720,8 @@ const Index = () => {
                       Pause
                     </Button>
                   ) : (
-                    <Button onClick={startSimulation}>
+                    <Button onClick={startSimulation} className="flex items-center gap-2">
+                      <Play className="h-4 w-4" />
                       {barbers.length === 0 ? "Start" : "Resume"}
                     </Button>
                   )}
@@ -770,98 +931,4 @@ const Index = () => {
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="explanation" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Info className="h-5 w-5" />
-                  The Sleeping Barber Problem
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="prose max-w-none">
-                <p>
-                  The Sleeping Barber problem is a classic synchronization problem in operating systems that illustrates the need for semaphores and mutex locks. It was originally proposed by Edsger Dijkstra in 1965.
-                </p>
-                
-                <h3>Problem Statement:</h3>
-                <p>
-                  A barbershop has one barber, one barber chair, and n chairs for customers to wait. If there are no customers, the barber sleeps. If a customer enters and the barber is sleeping, the customer wakes up the barber. If the barber is busy and chairs are available, the customer waits. If all chairs are full, the customer leaves.
-                </p>
-                
-                <h3>Key Synchronization Concepts:</h3>
-                <ul>
-                  <li><strong>Mutex:</strong> A lock that ensures only one thread can access a resource at a time</li>
-                  <li><strong>Semaphore:</strong> A variable that controls access to a common resource by multiple processes</li>
-                  <li><strong>Race Condition:</strong> When multiple threads access shared data and the final outcome depends on the sequence of operations</li>
-                  <li><strong>Deadlock:</strong> When two or more threads are blocked forever, waiting for each other</li>
-                </ul>
-                
-                <h3>Implementation in Operating Systems:</h3>
-                <p>
-                  In a real OS implementation, the barber and customer would be separate threads or processes, and the following synchronization mechanisms would be used:
-                </p>
-                
-                <Alert>
-                  <AlertTitle>Pseudo Code Example</AlertTitle>
-                  <AlertDescription>
-                    <pre>
-{`// Semaphores
-mutex = 1      // Protects access to shared resources
-barbers = 0    // # of barbers ready to serve
-customers = 0  // # of customers ready to be served
-chairs = N     // # of chairs in waiting area
-
-Barber process:
-  while true:
-    down(customers)     // Wait for a customer
-    down(mutex)         // Enter critical section
-    chairs = chairs + 1 // Free a chair
-    up(barbers)         // Signal barber is ready
-    up(mutex)           // Exit critical section
-    // Cut hair
-    
-Customer process:
-  down(mutex)           // Enter critical section
-  if chairs > 0:        // If chairs available
-    chairs = chairs - 1 // Take a chair
-    up(customers)       // Signal there's a customer
-    up(mutex)           // Exit critical section
-    down(barbers)       // Wait for barber
-    // Get hair cut
-  else:
-    up(mutex)           // Exit critical section
-    // Leave
-`}
-                    </pre>
-                  </AlertDescription>
-                </Alert>
-                
-                <h3>Educational Value:</h3>
-                <p>
-                  This problem teaches important concepts about concurrency, process synchronization, and preventing race conditions. The simulation you're using visualizes these concepts by showing:
-                </p>
-                <ul>
-                  <li>How barbers switch between sleeping and working states</li>
-                  <li>How customers enter the system and either get served, wait, or leave</li>
-                  <li>The effect of resource constraints (limited chairs)</li>
-                  <li>Statistics about system performance</li>
-                </ul>
-                
-                <p>
-                  By adjusting parameters like the number of barbers, waiting chairs, and arrival rates, you can observe how changes affect the efficiency of the system and experiment with different synchronization scenarios.
-                </p>
-                
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-};
-
-export default Index;
+              </Card
