@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, User, Users, Scissors, Info, Save, Play, Download, Upload } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -931,4 +932,71 @@ const Index = () => {
                     )}
                   </div>
                 </div>
-              </Card
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="explanation" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  The Sleeping Barber Problem
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose max-w-none">
+                  <p>
+                    The Sleeping Barber Problem is a classic synchronization problem in operating systems that illustrates concurrent programming challenges.
+                  </p>
+                  
+                  <h3>Problem Description</h3>
+                  <p>
+                    A barbershop has:
+                  </p>
+                  <ul>
+                    <li>One or more barbers who cut hair one customer at a time</li>
+                    <li>A waiting room with limited chairs</li>
+                    <li>Customers who arrive randomly</li>
+                  </ul>
+                  
+                  <p>When there are no customers, the barber sleeps (goes idle). When a customer arrives:</p>
+                  <ul>
+                    <li>If the barber is sleeping, the customer wakes them up for a haircut</li>
+                    <li>If the barber is busy but chairs are available, the customer waits</li>
+                    <li>If all chairs are occupied, the customer leaves</li>
+                  </ul>
+                  
+                  <h3>Operating System Concepts Illustrated</h3>
+                  <ul>
+                    <li><strong>Mutual Exclusion:</strong> Only one process (barber) can access a resource (chair) at a time</li>
+                    <li><strong>Semaphores:</strong> Used to signal when customers are waiting or when the barber is ready</li>
+                    <li><strong>Process Coordination:</strong> Barbers and customers must coordinate their actions</li>
+                    <li><strong>Deadlock Prevention:</strong> The system must avoid situations where processes wait indefinitely</li>
+                  </ul>
+                  
+                  <h3>In This Simulation</h3>
+                  <p>
+                    Our interactive simulation allows you to:
+                  </p>
+                  <ul>
+                    <li>Adjust the number of barbers to see how it affects throughput</li>
+                    <li>Change the waiting room capacity</li>
+                    <li>Control customer arrival rates</li>
+                    <li>Observe the system behavior over time with statistics</li>
+                  </ul>
+                  
+                  <p>
+                    Try experimenting with different configurations to observe how these parameters affect the efficiency of the system!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default Index;
