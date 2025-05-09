@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -359,7 +360,8 @@ const Index = () => {
             
             toast({
               title: "Haircut Complete",
-              description: `${customer.name} finished their haircut. ${nextCustomer.name} is now being served by Barber #${barberId + 1}.`
+              description: `${customer.name} finished their haircut. ${nextCustomer.name} is now being served by Barber #${barberId + 1}.`,
+              variant: "success"
             });
             
             // Update waiting queue by removing the first customer
@@ -381,7 +383,7 @@ const Index = () => {
             
             toast({
               title: "Haircut Complete",
-              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`,
+              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`
             });
           }
         } else {
@@ -938,3 +940,4 @@ const Index = () => {
 };
 
 export default Index;
+
