@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +40,7 @@ interface Customer {
   timeLeft?: number;
   servedBy?: number;
   waitingPosition?: number;
-  serviceEndTime?: number; // Add serviceEndTime to track when service will finish
+  serviceEndTime?: number; // Track when service will finish
 }
 
 interface Barber {
@@ -50,7 +49,7 @@ interface Barber {
   servingCustomerId: number | null;
   totalCustomersServed: number;
   currentServiceStartTime?: number;
-  serviceEndTime?: number; // Add serviceEndTime to track when service will finish
+  serviceEndTime?: number; // Track when service will finish
 }
 
 // Main component
@@ -95,6 +94,7 @@ const Index = () => {
   }, []);
   
   const initializeSimulation = () => {
+    // Create initial barbers - all in sleeping state
     const initialBarbers = Array.from({ length: numBarbers }).map((_, index) => ({
       id: index + 1,
       state: BarberState.SLEEPING,
@@ -109,6 +109,12 @@ const Index = () => {
     setTurnedAwayCustomers([]);
     setCurrentTime(0);
     setNextCustomerId(1);
+    
+    // Stop any existing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = undefined;
+    }
   };
   
   // Reset simulation
@@ -116,8 +122,14 @@ const Index = () => {
     setIsRunning(false);
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
+      animationRef.current = undefined;
     }
     initializeSimulation();
+    
+    toast({
+      title: "Simulation Reset",
+      description: "All barbers are now sleeping and waiting for customers.",
+    });
   };
   
   // Start haircuts button function
@@ -142,7 +154,6 @@ const Index = () => {
     
     // For each sleeping barber, assign a customer if available
     const updatedBarbers = [...barbers];
-    const servedCustomerIds: number[] = [];
     
     for (const barberIndex of sleepingBarberIndices) {
       if (waitingCustomers.length > 0) {
@@ -159,7 +170,7 @@ const Index = () => {
           servingCustomerId: nextCustomer.id,
           currentServiceStartTime: currentTime,
           serviceEndTime: serviceEndTime,
-          totalCustomersServed: updatedBarbers[barberIndex].totalCustomersServed
+          // Don't increment served count yet, do it when haircut completes
         };
         
         // Mark this customer as being served
@@ -173,7 +184,6 @@ const Index = () => {
         };
         
         // Add to serving list and track for removal from waiting
-        servedCustomerIds.push(nextCustomer.id);
         setCurrentCustomers(prev => [...prev, updatedNextCustomer]);
         
         toast({
@@ -238,10 +248,11 @@ const Index = () => {
   const addCustomerWithName = (name: string) => {
     const nextId = nextCustomerId;
     
-    // Check if there are any sleeping barbers
+    // When a customer arrives, check if there are any sleeping barbers
     const sleepingBarberId = barbers.findIndex(b => b.state === BarberState.SLEEPING);
     
-    if (sleepingBarberId !== -1) {
+    // If there's a sleeping barber, wake them up to serve this customer immediately
+    if (sleepingBarberId !== -1 && isRunning) {
       // Wake up the barber and assign the customer
       const updatedBarbers = [...barbers];
       
@@ -254,7 +265,7 @@ const Index = () => {
         servingCustomerId: nextId,
         currentServiceStartTime: currentTime,
         serviceEndTime: serviceEndTime,
-        totalCustomersServed: updatedBarbers[sleepingBarberId].totalCustomersServed
+        // Don't increment served count yet
       };
 
       const newCustomer: Customer = {
@@ -276,7 +287,8 @@ const Index = () => {
         description: `${name} is now getting a haircut from Barber #${sleepingBarberId + 1}`
       });
     } 
-    // If all barbers are busy, try to add to waiting queue
+    // Otherwise, if all barbers are busy or simulation isn't running,
+    // add to waiting queue if there's space
     else if (waitingCustomers.length < numChairs) {
       const newCustomer: Customer = {
         id: nextId,
@@ -322,7 +334,7 @@ const Index = () => {
     addCustomerWithName(randomName);
   };
   
-  // Process a time step
+  // Process a time step in the simulation
   const processTimeStep = (timeStep: number) => {
     if (!isRunning) return;
     
@@ -373,6 +385,7 @@ const Index = () => {
               servingCustomerId: nextCustomer.id,
               currentServiceStartTime: newTime,
               serviceEndTime: nextServiceEndTime,
+              // Increment served count when haircut is completed
               totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
             };
             
@@ -400,12 +413,15 @@ const Index = () => {
               state: BarberState.SLEEPING,
               servingCustomerId: null,
               currentServiceStartTime: undefined,
-              serviceEndTime: undefined
+              serviceEndTime: undefined,
+              // Increment served count when haircut is completed
+              totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
             };
             
             toast({
               title: "Haircut Complete",
-              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`
+              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`,
+              variant: "success"
             });
           }
         } else {
