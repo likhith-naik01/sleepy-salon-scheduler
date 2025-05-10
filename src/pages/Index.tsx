@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, User, Users, Scissors, Info, Play, Circle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { 
   Table, 
   TableBody, 
@@ -133,6 +133,110 @@ const Index = () => {
     });
   };
   
+  // Add a customer manually via the booking form
+  const handleBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a customer name",
+        variant: "destructive"
+      });
+      return;
+    }
+    addCustomerWithName(customerName);
+    setCustomerName('');
+  };
+  
+  // Add a customer to the salon with a name
+  const addCustomerWithName = (name: string) => {
+    const nextId = nextCustomerId;
+    
+    // When a customer arrives, check if there are any sleeping barbers
+    const sleepingBarberId = barbers.findIndex(b => b.state === BarberState.SLEEPING);
+    
+    // If there's a sleeping barber, wake them up to serve this customer immediately
+    if (sleepingBarberId !== -1) {
+      // Wake up the barber and assign the customer
+      const updatedBarbers = [...barbers];
+      
+      // Calculate when service will end based on service time
+      const serviceEndTime = currentTime + serviceTime;
+      
+      updatedBarbers[sleepingBarberId] = {
+        ...updatedBarbers[sleepingBarberId],
+        state: BarberState.WORKING,
+        servingCustomerId: nextId,
+        currentServiceStartTime: currentTime,
+        serviceEndTime: serviceEndTime,
+      };
+
+      const newCustomer: Customer = {
+        id: nextId,
+        name: name,
+        state: CustomerState.GETTING_HAIRCUT,
+        timeArrived: currentTime,
+        timeServed: currentTime,
+        servedBy: sleepingBarberId + 1,
+        serviceEndTime: serviceEndTime
+      };
+
+      setBarbers(updatedBarbers);
+      setCurrentCustomers(prev => [...prev, newCustomer]);
+      setNextCustomerId(nextId + 1);
+      
+      toast({
+        title: "Customer Seated",
+        description: `${name} is now getting a haircut from Barber #${sleepingBarberId + 1}`
+      });
+      
+      // Start simulation if it's not running
+      if (!isRunning) {
+        setIsRunning(true);
+        lastTimeRef.current = performance.now();
+        animationRef.current = requestAnimationFrame(animationLoop);
+      }
+    } 
+    // Otherwise, if all barbers are busy,
+    // add to waiting queue if there's space
+    else if (waitingCustomers.length < numChairs) {
+      const newCustomer: Customer = {
+        id: nextId,
+        name: name,
+        state: CustomerState.WAITING,
+        timeArrived: currentTime,
+        waitingPosition: waitingCustomers.length
+      };
+
+      setWaitingCustomers(prev => [...prev, newCustomer]);
+      setNextCustomerId(nextId + 1);
+      
+      toast({
+        title: "Added to Waiting List",
+        description: `${name} is now waiting (position #${waitingCustomers.length + 1})`
+      });
+    } 
+    // If waiting area is full, turn away the customer
+    else {
+      const newCustomer: Customer = {
+        id: nextId,
+        name: name,
+        state: CustomerState.TURNED_AWAY,
+        timeArrived: currentTime,
+        timeLeft: currentTime
+      };
+
+      setTurnedAwayCustomers(prev => [...prev, newCustomer]);
+      setNextCustomerId(nextId + 1);
+      
+      toast({
+        title: "Customer Turned Away",
+        description: `${name} was turned away because the waiting area is full`,
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Start haircuts button function
   const startHaircuts = () => {
     // Check if we have any barbers
@@ -145,7 +249,7 @@ const Index = () => {
       .map((barber, index) => barber.state === BarberState.SLEEPING ? index : -1)
       .filter(index => index !== -1);
     
-    if (sleepingBarberIndices.length === 0) {
+    if (sleepingBarberIndices.length === 0 && waitingCustomers.length === 0) {
       toast({
         title: "All barbers are working",
         description: "All barbers are currently busy serving customers.",
@@ -153,8 +257,31 @@ const Index = () => {
       return;
     }
     
+    // Start simulation timer if it's not already running
+    if (!isRunning) {
+      setIsRunning(true);
+      lastTimeRef.current = performance.now();
+      animationRef.current = requestAnimationFrame(animationLoop);
+    }
+    
+    // For each sleeping barber, assign a customer if available
+    assignCustomersToBarbers();
+  };
+  
+  // Assign waiting customers to any available barbers
+  const assignCustomersToBarbers = () => {
+    if (waitingCustomers.length === 0) return false;
+    
+    // Get all sleeping barbers
+    const sleepingBarberIndices = barbers
+      .map((barber, index) => barber.state === BarberState.SLEEPING ? index : -1)
+      .filter(index => index !== -1);
+    
+    if (sleepingBarberIndices.length === 0) return false;
+    
     // For each sleeping barber, assign a customer if available
     const updatedBarbers = [...barbers];
+    let customersAssigned = false;
     
     for (const barberIndex of sleepingBarberIndices) {
       if (waitingCustomers.length > 0) {
@@ -201,18 +328,13 @@ const Index = () => {
         }));
         
         setWaitingCustomers(updatedWaiting);
+        customersAssigned = true;
       }
     }
     
     // Update barber states
     setBarbers(updatedBarbers);
-    
-    // Start simulation timer if it's not already running
-    if (!isRunning) {
-      setIsRunning(true);
-      lastTimeRef.current = performance.now();
-      animationRef.current = requestAnimationFrame(animationLoop);
-    }
+    return customersAssigned;
   };
   
   // Animation loop
@@ -227,116 +349,6 @@ const Index = () => {
     
     processTimeStep(timeStep);
     animationRef.current = requestAnimationFrame(animationLoop);
-  };
-  
-  // Add a customer manually via the booking form
-  const handleBooking = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customerName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a customer name",
-        variant: "destructive"
-      });
-      return;
-    }
-    addCustomerWithName(customerName);
-    setCustomerName('');
-  };
-  
-  // Add a customer to the salon with a name
-  const addCustomerWithName = (name: string) => {
-    const nextId = nextCustomerId;
-    
-    // When a customer arrives, check if there are any sleeping barbers
-    const sleepingBarberId = barbers.findIndex(b => b.state === BarberState.SLEEPING);
-    
-    // If there's a sleeping barber, wake them up to serve this customer immediately
-    if (sleepingBarberId !== -1 && isRunning) {
-      // Wake up the barber and assign the customer
-      const updatedBarbers = [...barbers];
-      
-      // Calculate when service will end based on service time
-      const serviceEndTime = currentTime + serviceTime;
-      
-      updatedBarbers[sleepingBarberId] = {
-        ...updatedBarbers[sleepingBarberId],
-        state: BarberState.WORKING,
-        servingCustomerId: nextId,
-        currentServiceStartTime: currentTime,
-        serviceEndTime: serviceEndTime,
-      };
-
-      const newCustomer: Customer = {
-        id: nextId,
-        name: name,
-        state: CustomerState.GETTING_HAIRCUT,
-        timeArrived: currentTime,
-        timeServed: currentTime,
-        servedBy: sleepingBarberId + 1,
-        serviceEndTime: serviceEndTime
-      };
-
-      setBarbers(updatedBarbers);
-      setCurrentCustomers(prev => [...prev, newCustomer]);
-      setNextCustomerId(nextId + 1);
-      
-      toast({
-        title: "Customer Seated",
-        description: `${name} is now getting a haircut from Barber #${sleepingBarberId + 1}`
-      });
-    } 
-    // Otherwise, if all barbers are busy or simulation isn't running,
-    // add to waiting queue if there's space
-    else if (waitingCustomers.length < numChairs) {
-      const newCustomer: Customer = {
-        id: nextId,
-        name: name,
-        state: CustomerState.WAITING,
-        timeArrived: currentTime,
-        waitingPosition: waitingCustomers.length
-      };
-
-      setWaitingCustomers(prev => [...prev, newCustomer]);
-      setNextCustomerId(nextId + 1);
-      
-      toast({
-        title: "Added to Waiting List",
-        description: `${name} is now waiting (position #${waitingCustomers.length + 1})`
-      });
-      
-      // If the simulation is running and there are sleeping barbers,
-      // we should automatically wake them up
-      if (isRunning) {
-        startHaircuts();
-      }
-    } 
-    // If waiting area is full, turn away the customer
-    else {
-      const newCustomer: Customer = {
-        id: nextId,
-        name: name,
-        state: CustomerState.TURNED_AWAY,
-        timeArrived: currentTime,
-        timeLeft: currentTime
-      };
-
-      setTurnedAwayCustomers(prev => [...prev, newCustomer]);
-      setNextCustomerId(nextId + 1);
-      
-      toast({
-        title: "Customer Turned Away",
-        description: `${name} was turned away because the waiting area is full`,
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Add a random customer to the salon
-  const addRandomCustomer = () => {
-    const randomNames = ["Alex", "Sam", "Jamie", "Taylor", "Jordan", "Casey", "Avery", "Riley", "Quinn", "Morgan"];
-    const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] + " " + nextCustomerId;
-    addCustomerWithName(randomName);
   };
   
   // Calculate service progress as a percentage
@@ -391,7 +403,8 @@ const Index = () => {
           // Update barber's total customers served count immediately
           updatedBarbers[barberId] = {
             ...updatedBarbers[barberId],
-            totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
+            totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1,
+            servingCustomerId: null
           };
           
           // Check if there's another waiting customer
@@ -416,8 +429,9 @@ const Index = () => {
               ...updatedBarbers[barberId],
               servingCustomerId: nextCustomer.id,
               currentServiceStartTime: newTime,
-              serviceEndTime: nextServiceEndTime
-              // Note: We've already updated totalCustomersServed above
+              serviceEndTime: nextServiceEndTime,
+              state: BarberState.WORKING
+              // Total customers served already updated above
             };
             
             // Add customer to currently being served
@@ -426,8 +440,7 @@ const Index = () => {
             // Show toast notification
             toast({
               title: "Haircut Complete",
-              description: `${customer.name} finished their haircut. ${nextCustomer.name} is now being served by Barber #${barberId + 1}.`,
-              variant: "success"
+              description: `${customer.name} finished their haircut. ${nextCustomer.name} is now being served by Barber #${barberId + 1}.`
             });
             
             // Update waiting queue by removing the first customer
@@ -446,14 +459,13 @@ const Index = () => {
               servingCustomerId: null,
               currentServiceStartTime: undefined,
               serviceEndTime: undefined
-              // Note: We've already updated totalCustomersServed above
+              // Total customers served already updated above
             };
             
             // Show toast notification
             toast({
               title: "Haircut Complete",
-              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`,
-              variant: "success"
+              description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`
             });
           }
         } else {
@@ -472,10 +484,22 @@ const Index = () => {
       setServedCustomers(prev => [...prev, ...finishedCustomers]);
     }
     
+    // Check if we should assign any waiting customers to sleeping barbers
+    if (waitingCustomers.length > 0) {
+      assignCustomersToBarbers();
+    }
+    
     // Add random customer after state update if probability hits and simulation is running
     if (Math.random() < (arrivalRate / 60) * timeStep && isRunning) {
       addRandomCustomer();
     }
+  };
+  
+  // Add a random customer to the salon
+  const addRandomCustomer = () => {
+    const randomNames = ["Alex", "Sam", "Jamie", "Taylor", "Jordan", "Casey", "Avery", "Riley", "Quinn", "Morgan"];
+    const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] + " " + nextCustomerId;
+    addCustomerWithName(randomName);
   };
   
   // Update simulation parameters
@@ -728,13 +752,13 @@ const Index = () => {
                         
                         return (
                           <div key={barber.id} className="relative">
-                            <div className={`barber p-4 rounded-lg ${barber.state === BarberState.SLEEPING ? 'barber-sleeping bg-gray-100 animate-pulse' : 'barber-working bg-green-50'}`}>
+                            <div className={`barber p-4 rounded-lg border ${barber.state === BarberState.SLEEPING ? 'bg-gray-100' : 'bg-green-50 border-green-200'}`}>
                               <div className="flex flex-col items-center space-y-2">
-                                <Scissors className="w-6 h-6" />
+                                <Scissors className={`w-6 h-6 ${barber.state === BarberState.SLEEPING ? 'text-gray-400' : 'text-green-600'}`} />
                                 <div className="mt-2 text-center text-sm font-medium">
                                   Barber #{barber.id}
                                 </div>
-                                <div className="text-xs text-center font-medium">
+                                <div className={`text-xs text-center font-medium ${barber.state === BarberState.SLEEPING ? 'text-gray-500' : 'text-green-600'}`}>
                                   {barber.state === BarberState.SLEEPING ? 'Sleeping' : 'Working'}
                                 </div>
                                 <div className="text-xs">
@@ -744,13 +768,8 @@ const Index = () => {
                                 {barber.state === BarberState.WORKING && customer && (
                                   <div className="mt-2 w-full">
                                     <div className="relative pt-1">
-                                      <div className="text-xs text-center mb-1">{customer.name}</div>
-                                      <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                                        <div 
-                                          style={{ width: `${serviceProgress}%` }} 
-                                          className="transition-all duration-300 shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
-                                        ></div>
-                                      </div>
+                                      <div className="text-xs text-center mb-1 font-medium">{customer.name}</div>
+                                      <Progress value={serviceProgress} className="h-2" />
                                       <div className="text-xs text-center mt-1">
                                         {Math.round(serviceProgress)}% complete
                                       </div>
@@ -880,164 +899,3 @@ const Index = () => {
                 <CardTitle>Book a Haircut</CardTitle>
                 <CardDescription>
                   Enter customer information to add them to the queue
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleBooking} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="customerName">Customer Name</Label>
-                      <Input
-                        id="customerName"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Enter name"
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
-                    Book Appointment
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <h3 className="font-medium">Served Customers ({servedCustomers.length})</h3>
-                  <div className="max-h-[200px] overflow-y-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 text-left">
-                          <th className="p-2">ID</th>
-                          <th className="p-2">Name</th>
-                          <th className="p-2">Barber</th>
-                          <th className="p-2">Wait Time</th>
-                          <th className="p-2">Service Time</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {servedCustomers.map((customer) => (
-                          <tr key={customer.id} className="border-t">
-                            <td className="p-2">{customer.id}</td>
-                            <td className="p-2">{customer.name}</td>
-                            <td className="p-2">#{customer.servedBy}</td>
-                            <td className="p-2">
-                              {((customer.timeServed || 0) - customer.timeArrived).toFixed(1)}s
-                            </td>
-                            <td className="p-2">
-                              {((customer.timeLeft || 0) - (customer.timeServed || 0)).toFixed(1)}s
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    
-                    {servedCustomers.length === 0 && (
-                      <div className="text-center py-4 text-gray-500">
-                        No customers served yet
-                      </div>
-                    )}
-                  </div>
-                  
-                  <h3 className="font-medium mt-6">Turned Away Customers ({turnedAwayCustomers.length})</h3>
-                  <div className="max-h-[200px] overflow-y-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 text-left">
-                          <th className="p-2">ID</th>
-                          <th className="p-2">Name</th>
-                          <th className="p-2">Time Arrived</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {turnedAwayCustomers.map((customer) => (
-                          <tr key={customer.id} className="border-t">
-                            <td className="p-2">{customer.id}</td>
-                            <td className="p-2">{customer.name}</td>
-                            <td className="p-2">{formatTime(customer.timeArrived)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    
-                    {turnedAwayCustomers.length === 0 && (
-                      <div className="text-center py-4 text-gray-500">
-                        No customers turned away yet
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="explanation" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Info className="h-5 w-5" />
-                  The Sleeping Barber Problem
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none">
-                  <p>
-                    The Sleeping Barber Problem is a classic synchronization problem in operating systems that illustrates concurrent programming challenges.
-                  </p>
-                  
-                  <h3>Problem Description</h3>
-                  <p>
-                    A barbershop has:
-                  </p>
-                  <ul>
-                    <li>One or more barbers who cut hair one customer at a time</li>
-                    <li>A waiting room with limited chairs</li>
-                    <li>Customers who arrive randomly</li>
-                  </ul>
-                  
-                  <p>When there are no customers, the barber sleeps (goes idle). When a customer arrives:</p>
-                  <ul>
-                    <li>If the barber is sleeping, the customer wakes them up for a haircut</li>
-                    <li>If the barber is busy but chairs are available, the customer waits</li>
-                    <li>If all chairs are occupied, the customer leaves</li>
-                  </ul>
-                  
-                  <h3>Operating System Concepts Illustrated</h3>
-                  <ul>
-                    <li><strong>Mutual Exclusion:</strong> Only one process (barber) can access a resource (chair) at a time</li>
-                    <li><strong>Semaphores:</strong> Used to signal when customers are waiting or when the barber is ready</li>
-                    <li><strong>Process Coordination:</strong> Barbers and customers must coordinate their actions</li>
-                    <li><strong>Deadlock Prevention:</strong> The system must avoid situations where processes wait indefinitely</li>
-                  </ul>
-                  
-                  <h3>In This Simulation</h3>
-                  <p>
-                    Our interactive simulation allows you to:
-                  </p>
-                  <ul>
-                    <li>Adjust the number of barbers to see how it affects throughput</li>
-                    <li>Change the waiting room capacity</li>
-                    <li>Control customer arrival rates</li>
-                    <li>Observe the system behavior over time with statistics</li>
-                  </ul>
-                  
-                  <p>
-                    Try experimenting with different configurations to observe how these parameters affect the efficiency of the system!
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-};
-
-export default Index;
-
