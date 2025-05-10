@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -333,6 +332,8 @@ const Index = () => {
             state: CustomerState.SERVED,
             timeLeft: newTime
           };
+          
+          // Add to finished customers list to update stats
           finishedCustomers.push(finishedCustomer);
           
           // Check if there's another waiting customer
@@ -940,4 +941,3 @@ const Index = () => {
 };
 
 export default Index;
-
