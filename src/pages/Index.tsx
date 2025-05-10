@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Info, Play } from "lucide-react";
+import { Clock, User, Users, Scissors, Info, Play, Circle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   Table, 
@@ -170,7 +171,6 @@ const Index = () => {
           servingCustomerId: nextCustomer.id,
           currentServiceStartTime: currentTime,
           serviceEndTime: serviceEndTime,
-          // Don't increment served count yet, do it when haircut completes
         };
         
         // Mark this customer as being served
@@ -265,7 +265,6 @@ const Index = () => {
         servingCustomerId: nextId,
         currentServiceStartTime: currentTime,
         serviceEndTime: serviceEndTime,
-        // Don't increment served count yet
       };
 
       const newCustomer: Customer = {
@@ -305,6 +304,12 @@ const Index = () => {
         title: "Added to Waiting List",
         description: `${name} is now waiting (position #${waitingCustomers.length + 1})`
       });
+      
+      // If the simulation is running and there are sleeping barbers,
+      // we should automatically wake them up
+      if (isRunning) {
+        startHaircuts();
+      }
     } 
     // If waiting area is full, turn away the customer
     else {
@@ -332,6 +337,26 @@ const Index = () => {
     const randomNames = ["Alex", "Sam", "Jamie", "Taylor", "Jordan", "Casey", "Avery", "Riley", "Quinn", "Morgan"];
     const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] + " " + nextCustomerId;
     addCustomerWithName(randomName);
+  };
+  
+  // Calculate service progress as a percentage
+  const getServiceProgress = (barber: Barber): number => {
+    if (barber.state !== BarberState.WORKING || !barber.currentServiceStartTime || !barber.serviceEndTime) {
+      return 0;
+    }
+    
+    const totalServiceTime = barber.serviceEndTime - barber.currentServiceStartTime;
+    const elapsedTime = currentTime - barber.currentServiceStartTime;
+    
+    // Calculate progress as percentage
+    const progress = Math.min(100, Math.max(0, (elapsedTime / totalServiceTime) * 100));
+    return progress;
+  };
+  
+  // Get customer by ID
+  const getCustomerById = (id: number | null): Customer | undefined => {
+    if (id === null) return undefined;
+    return currentCustomers.find(c => c.id === id);
   };
   
   // Process a time step in the simulation
@@ -674,9 +699,9 @@ const Index = () => {
                   <Button 
                     variant="success" 
                     onClick={startHaircuts} 
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                   >
-                    <Scissors className="h-4 w-4" />
+                    <Play className="h-4 w-4" />
                     Start Haircuts
                   </Button>
                 </div>
@@ -697,26 +722,54 @@ const Index = () => {
                   <div className="md:col-span-2">
                     <h3 className="text-lg font-medium mb-3">Barber Stations</h3>
                     <div className="barber-shop-floor p-4 flex flex-wrap gap-6">
-                      {barbers.map((barber) => (
-                        <div key={barber.id} className="relative">
-                          <div className={`barber ${barber.state === BarberState.SLEEPING ? 'barber-sleeping animate-sleeping' : 'barber-working'}`}>
-                            <Scissors className="w-6 h-6" />
-                          </div>
-                          <div className="mt-2 text-center text-sm font-medium">
-                            Barber #{barber.id}
-                          </div>
-                          <div className="text-xs text-center">
-                            {barber.state === BarberState.SLEEPING ? 'Sleeping' : 'Working'}
-                          </div>
-                          {barber.servingCustomerId && (
-                            <div className="absolute -right-4 -top-4">
-                              <div className="customer">
-                                <User className="w-4 h-4" />
+                      {barbers.map((barber) => {
+                        const customer = getCustomerById(barber.servingCustomerId);
+                        const serviceProgress = getServiceProgress(barber);
+                        
+                        return (
+                          <div key={barber.id} className="relative">
+                            <div className={`barber p-4 rounded-lg ${barber.state === BarberState.SLEEPING ? 'barber-sleeping bg-gray-100 animate-pulse' : 'barber-working bg-green-50'}`}>
+                              <div className="flex flex-col items-center space-y-2">
+                                <Scissors className="w-6 h-6" />
+                                <div className="mt-2 text-center text-sm font-medium">
+                                  Barber #{barber.id}
+                                </div>
+                                <div className="text-xs text-center font-medium">
+                                  {barber.state === BarberState.SLEEPING ? 'Sleeping' : 'Working'}
+                                </div>
+                                <div className="text-xs">
+                                  Customers Served: {barber.totalCustomersServed}
+                                </div>
+                                
+                                {barber.state === BarberState.WORKING && customer && (
+                                  <div className="mt-2 w-full">
+                                    <div className="relative pt-1">
+                                      <div className="text-xs text-center mb-1">{customer.name}</div>
+                                      <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+                                        <div 
+                                          style={{ width: `${serviceProgress}%` }} 
+                                          className="transition-all duration-300 shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
+                                        ></div>
+                                      </div>
+                                      <div className="text-xs text-center mt-1">
+                                        {Math.round(serviceProgress)}% complete
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            
+                            {barber.servingCustomerId && (
+                              <div className="absolute -right-4 -top-4">
+                                <div className="customer bg-blue-500 text-white p-2 rounded-full">
+                                  <User className="w-4 h-4" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                       
                       {barbers.length === 0 && (
                         <div className="text-center w-full py-8 text-gray-500">
@@ -729,15 +782,18 @@ const Index = () => {
                   {/* Waiting Area */}
                   <div>
                     <h3 className="text-lg font-medium mb-3">Waiting Area ({waitingCustomers.length}/{numChairs})</h3>
-                    <div className="waiting-area min-h-[200px]">
+                    <div className="waiting-area min-h-[200px] max-h-[400px] overflow-y-auto bg-slate-50 p-3 rounded-md border border-slate-200">
                       {waitingCustomers.map((customer, index) => (
-                        <div key={customer.id} className="flex items-center gap-2 p-2 mb-2 bg-slate-100 rounded-md">
-                          <div className="w-8 h-8 rounded-full bg-salon-secondary flex items-center justify-center text-white">
+                        <div key={customer.id} className="flex items-center gap-2 p-2 mb-2 bg-white rounded-md shadow-sm">
+                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                             <User className="w-4 h-4" />
                           </div>
                           <div className="flex-1 overflow-hidden">
                             <div className="text-sm font-medium truncate">{customer.name}</div>
                             <div className="text-xs text-gray-500">Position: {index + 1}</div>
+                            <div className="text-xs text-gray-500">
+                              Waiting for: {formatTime(currentTime - customer.timeArrived)}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -763,22 +819,22 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-salon-peach/30 p-4 rounded-lg">
+                  <div className="bg-green-100 p-4 rounded-lg">
                     <div className="text-lg font-bold">{servedCustomers.length}</div>
                     <div className="text-sm text-gray-600">Customers Served</div>
                   </div>
                   
-                  <div className="bg-salon-primary/20 p-4 rounded-lg">
+                  <div className="bg-blue-100 p-4 rounded-lg">
                     <div className="text-lg font-bold">{waitingCustomers.length}</div>
                     <div className="text-sm text-gray-600">Currently Waiting</div>
                   </div>
                   
-                  <div className="bg-salon-secondary/20 p-4 rounded-lg">
+                  <div className="bg-red-100 p-4 rounded-lg">
                     <div className="text-lg font-bold">{turnedAwayCustomers.length}</div>
                     <div className="text-sm text-gray-600">Turned Away</div>
                   </div>
                   
-                  <div className="bg-salon-orange/20 p-4 rounded-lg">
+                  <div className="bg-yellow-100 p-4 rounded-lg">
                     <div className="text-lg font-bold">{averageWaitTime.toFixed(1)}s</div>
                     <div className="text-sm text-gray-600">Avg Wait Time</div>
                   </div>
@@ -839,7 +895,7 @@ const Index = () => {
                       />
                     </div>
                   </div>
-                  <Button type="submit">
+                  <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
                     Book Appointment
                   </Button>
                 </form>
@@ -984,3 +1040,4 @@ const Index = () => {
 };
 
 export default Index;
+
