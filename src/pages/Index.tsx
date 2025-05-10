@@ -339,6 +339,7 @@ const Index = () => {
     if (!isRunning) return;
     
     const newTime = currentTime + timeStep;
+    setCurrentTime(newTime);
     
     // Check for finishing haircuts
     const updatedBarbers = [...barbers];
@@ -362,6 +363,12 @@ const Index = () => {
           // Add to finished customers list to update stats
           finishedCustomers.push(finishedCustomer);
           
+          // Update barber's total customers served count immediately
+          updatedBarbers[barberId] = {
+            ...updatedBarbers[barberId],
+            totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
+          };
+          
           // Check if there's another waiting customer
           if (waitingCustomers.length > 0) {
             // Get the next waiting customer
@@ -384,9 +391,8 @@ const Index = () => {
               ...updatedBarbers[barberId],
               servingCustomerId: nextCustomer.id,
               currentServiceStartTime: newTime,
-              serviceEndTime: nextServiceEndTime,
-              // Increment served count when haircut is completed
-              totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
+              serviceEndTime: nextServiceEndTime
+              // Note: We've already updated totalCustomersServed above
             };
             
             // Add customer to currently being served
@@ -414,9 +420,8 @@ const Index = () => {
               state: BarberState.SLEEPING,
               servingCustomerId: null,
               currentServiceStartTime: undefined,
-              serviceEndTime: undefined,
-              // Increment served count when haircut is completed
-              totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
+              serviceEndTime: undefined
+              // Note: We've already updated totalCustomersServed above
             };
             
             // Show toast notification
@@ -434,7 +439,6 @@ const Index = () => {
     });
     
     // Update state with all changes
-    setCurrentTime(newTime);
     setBarbers(updatedBarbers);
     setCurrentCustomers(stillServingCustomers);
     
