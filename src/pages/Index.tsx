@@ -392,6 +392,7 @@ const Index = () => {
             // Add customer to currently being served
             stillServingCustomers.push(updatedNextCustomer);
             
+            // Show toast notification
             toast({
               title: "Haircut Complete",
               description: `${customer.name} finished their haircut. ${nextCustomer.name} is now being served by Barber #${barberId + 1}.`,
@@ -418,6 +419,7 @@ const Index = () => {
               totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
             };
             
+            // Show toast notification
             toast({
               title: "Haircut Complete",
               description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`,
