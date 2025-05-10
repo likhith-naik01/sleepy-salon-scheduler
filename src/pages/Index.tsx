@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ interface Customer {
   timeLeft?: number;
   servedBy?: number;
   waitingPosition?: number;
+  serviceEndTime?: number; // Add serviceEndTime to track when service will finish
 }
 
 interface Barber {
@@ -48,6 +50,7 @@ interface Barber {
   servingCustomerId: number | null;
   totalCustomersServed: number;
   currentServiceStartTime?: number;
+  serviceEndTime?: number; // Add serviceEndTime to track when service will finish
 }
 
 // Main component
@@ -146,13 +149,17 @@ const Index = () => {
         // Get next waiting customer
         const nextCustomer = waitingCustomers[0];
         
+        // Calculate when service will end based on service time
+        const serviceEndTime = currentTime + serviceTime;
+        
         // Update barber state
         updatedBarbers[barberIndex] = {
           ...updatedBarbers[barberIndex],
           state: BarberState.WORKING,
           servingCustomerId: nextCustomer.id,
           currentServiceStartTime: currentTime,
-          totalCustomersServed: updatedBarbers[barberIndex].totalCustomersServed + 1
+          serviceEndTime: serviceEndTime,
+          totalCustomersServed: updatedBarbers[barberIndex].totalCustomersServed
         };
         
         // Mark this customer as being served
@@ -161,6 +168,7 @@ const Index = () => {
           state: CustomerState.GETTING_HAIRCUT,
           timeServed: currentTime,
           servedBy: barberIndex + 1,
+          serviceEndTime: serviceEndTime,
           waitingPosition: undefined
         };
         
@@ -236,12 +244,17 @@ const Index = () => {
     if (sleepingBarberId !== -1) {
       // Wake up the barber and assign the customer
       const updatedBarbers = [...barbers];
+      
+      // Calculate when service will end based on service time
+      const serviceEndTime = currentTime + serviceTime;
+      
       updatedBarbers[sleepingBarberId] = {
         ...updatedBarbers[sleepingBarberId],
         state: BarberState.WORKING,
         servingCustomerId: nextId,
         currentServiceStartTime: currentTime,
-        totalCustomersServed: updatedBarbers[sleepingBarberId].totalCustomersServed + 1
+        serviceEndTime: serviceEndTime,
+        totalCustomersServed: updatedBarbers[sleepingBarberId].totalCustomersServed
       };
 
       const newCustomer: Customer = {
@@ -250,7 +263,8 @@ const Index = () => {
         state: CustomerState.GETTING_HAIRCUT,
         timeArrived: currentTime,
         timeServed: currentTime,
-        servedBy: sleepingBarberId + 1
+        servedBy: sleepingBarberId + 1,
+        serviceEndTime: serviceEndTime
       };
 
       setBarbers(updatedBarbers);
@@ -321,11 +335,11 @@ const Index = () => {
     
     // Process each customer currently being served
     currentCustomers.forEach(customer => {
-      if (customer.state === CustomerState.GETTING_HAIRCUT && customer.timeServed) {
+      if (customer.state === CustomerState.GETTING_HAIRCUT && customer.serviceEndTime) {
         const barberId = customer.servedBy! - 1;
         
-        // If haircut is finished (check if service time has elapsed)
-        if (newTime - customer.timeServed >= serviceTime) {
+        // If haircut is finished (check if we've reached serviceEndTime)
+        if (newTime >= customer.serviceEndTime) {
           // Mark customer as served and add to finished list
           const finishedCustomer = {
             ...customer,
@@ -340,11 +354,16 @@ const Index = () => {
           if (waitingCustomers.length > 0) {
             // Get the next waiting customer
             const nextCustomer = waitingCustomers[0];
+            
+            // Calculate service end time for the next customer
+            const nextServiceEndTime = newTime + serviceTime;
+            
             const updatedNextCustomer = {
               ...nextCustomer,
               state: CustomerState.GETTING_HAIRCUT,
               timeServed: newTime,
               servedBy: barberId + 1,
+              serviceEndTime: nextServiceEndTime,
               waitingPosition: undefined
             };
             
@@ -353,6 +372,7 @@ const Index = () => {
               ...updatedBarbers[barberId],
               servingCustomerId: nextCustomer.id,
               currentServiceStartTime: newTime,
+              serviceEndTime: nextServiceEndTime,
               totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1
             };
             
@@ -379,7 +399,8 @@ const Index = () => {
               ...updatedBarbers[barberId],
               state: BarberState.SLEEPING,
               servingCustomerId: null,
-              currentServiceStartTime: undefined
+              currentServiceStartTime: undefined,
+              serviceEndTime: undefined
             };
             
             toast({
