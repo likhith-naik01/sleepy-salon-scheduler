@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils"
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & {
-    onComplete?: () => void; // Add callback for completion
+    onComplete?: () => void; // Keep the callback for completion
+    duration?: number; // Add duration parameter in seconds
   }
->(({ className, onComplete, ...props }, ref) => {
+>(({ className, onComplete, duration = 7, ...props }, ref) => {
   const [value, setValue] = React.useState(0)
 
   React.useEffect(() => {
@@ -17,7 +18,7 @@ const Progress = React.forwardRef<
 
     const interval = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000 // seconds
-      const progress = Math.min(100, (elapsed / 7) * 100)
+      const progress = Math.min(100, (elapsed / duration) * 100)
       setValue(progress)
 
       if (progress >= 100) {
@@ -30,7 +31,7 @@ const Progress = React.forwardRef<
     }, 100)
 
     return () => clearInterval(interval)
-  }, [onComplete])
+  }, [onComplete, duration])
 
   return (
     <ProgressPrimitive.Root
@@ -48,7 +49,7 @@ const Progress = React.forwardRef<
       />
       <div className="absolute inset-0 flex items-center justify-center">
         <span className="text-xs text-white font-medium shadow-sm">
-          {Math.max(0, Math.ceil(7 - (value / 100) * 7))}s
+          {Math.max(0, Math.ceil(duration - (value / 100) * duration))}s
         </span>
       </div>
     </ProgressPrimitive.Root>

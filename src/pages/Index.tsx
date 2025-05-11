@@ -997,6 +997,7 @@ const Index = () => {
                                         value={serviceProgress} 
                                         className={`h-3 ${isActive ? 'bg-green-200' : ''}`}
                                         onComplete={() => handleServiceComplete(barber.id)}
+                                        duration={timeRemaining} // Use the actual time remaining as the duration
                                       />
                                     </div>
                                   </div>
