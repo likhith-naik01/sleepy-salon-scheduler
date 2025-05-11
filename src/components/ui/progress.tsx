@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils"
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
->(({ className, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & {
+    onComplete?: () => void; // Add callback for completion
+  }
+>(({ className, onComplete, ...props }, ref) => {
   const [value, setValue] = React.useState(0)
 
   React.useEffect(() => {
@@ -20,11 +22,15 @@ const Progress = React.forwardRef<
 
       if (progress >= 100) {
         clearInterval(interval)
+        // Call onComplete when countdown reaches zero
+        if (onComplete) {
+          onComplete()
+        }
       }
     }, 100)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [onComplete])
 
   return (
     <ProgressPrimitive.Root

@@ -450,6 +450,114 @@ const Index = () => {
     animationRef.current = requestAnimationFrame(animationLoop);
   };
   
+  // Handle service completion when progress bar reaches 100%
+  const handleServiceComplete = (barberId: number) => {
+    // Find the barber in our state
+    const barberIndex = barbers.findIndex(b => b.id === barberId);
+    if (barberIndex === -1) return;
+    
+    const barber = barbers[barberIndex];
+    if (!barber.servingCustomerId) return;
+
+    // Find the customer being served by this barber
+    const customerIndex = currentCustomers.findIndex(c => c.id === barber.servingCustomerId);
+    if (customerIndex === -1) return;
+    
+    const customer = currentCustomers[customerIndex];
+    
+    // Update customer as served
+    const finishedCustomer = {
+      ...customer,
+      state: CustomerState.SERVED,
+      timeLeft: currentTime
+    };
+    
+    // Add to served customers list
+    setServedCustomers(prev => [...prev, finishedCustomer]);
+    
+    // Remove from current customers
+    const updatedCurrentCustomers = currentCustomers.filter(c => c.id !== customer.id);
+    setCurrentCustomers(updatedCurrentCustomers);
+    
+    // Update barber's total customers served count
+    const updatedBarbers = [...barbers];
+    updatedBarbers[barberIndex] = {
+      ...updatedBarbers[barberIndex],
+      totalCustomersServed: barber.totalCustomersServed + 1,
+      servingCustomerId: null,
+      state: BarberState.SLEEPING
+    };
+    
+    setBarbers(updatedBarbers);
+    
+    // Check if there's another waiting customer
+    if (waitingCustomers.length > 0) {
+      // Get the next waiting customer
+      const nextCustomer = { ...waitingCustomers[0] };
+      
+      // Calculate service end time for the next customer
+      const nextServiceEndTime = currentTime + serviceTime;
+      
+      // Update next customer state
+      const updatedNextCustomer = {
+        ...nextCustomer,
+        state: CustomerState.GETTING_HAIRCUT,
+        timeServed: currentTime,
+        servedBy: barberId,
+        serviceEndTime: nextServiceEndTime,
+        waitingPosition: undefined
+      };
+      
+      // Update barber state - keep working with new customer
+      updatedBarbers[barberIndex] = {
+        ...updatedBarbers[barberIndex],
+        servingCustomerId: nextCustomer.id,
+        currentServiceStartTime: currentTime,
+        serviceEndTime: nextServiceEndTime,
+        state: BarberState.WORKING
+      };
+      
+      // Add next customer to current customers list
+      setCurrentCustomers(prev => [...prev, updatedNextCustomer]);
+      
+      // Remove next customer from waiting list and update waiting positions
+      const newWaiting = waitingCustomers.slice(1).map((c, idx) => ({
+        ...c,
+        waitingPosition: idx
+      }));
+      
+      setWaitingCustomers(newWaiting);
+      
+      // Update interactive state
+      setLastActiveBarber(barberIndex);
+      setLastServedCustomer(nextCustomer.id);
+      
+      // Show toast notification
+      toast({
+        title: "Next Customer",
+        description: `${finishedCustomer.name} finished haircut. ${nextCustomer.name} is now with Barber #${barberId}.`
+      });
+    } else {
+      // No customers waiting, barber goes to sleep
+      updatedBarbers[barberIndex] = {
+        ...updatedBarbers[barberIndex],
+        state: BarberState.SLEEPING,
+        servingCustomerId: null,
+        currentServiceStartTime: undefined,
+        serviceEndTime: undefined
+      };
+      
+      // Show toast notification
+      toast({
+        title: "Barber Sleeping",
+        description: `${customer.name} finished their haircut. Barber #${barberId} is now sleeping as there are no more customers.`
+      });
+    }
+    
+    // Increment notification count
+    setNotificationCount(prev => prev + 1);
+  };
+  
   // Calculate service progress as a percentage - IMPROVED
   const getServiceProgress = (barber: Barber): number => {
     if (barber.state !== BarberState.WORKING || 
@@ -887,7 +995,8 @@ const Index = () => {
                                       </div>
                                       <Progress 
                                         value={serviceProgress} 
-                                        className={`h-3 ${isActive ? 'bg-green-200' : ''}`} 
+                                        className={`h-3 ${isActive ? 'bg-green-200' : ''}`}
+                                        onComplete={() => handleServiceComplete(barber.id)}
                                       />
                                     </div>
                                   </div>
