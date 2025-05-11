@@ -86,14 +86,20 @@ const Index = () => {
   const lastTimeRef = useRef<number>(0);
   const secondTickRef = useRef<number>(0);
   
-  // Metrics
+  // Metrics - Fix average wait time calculation
   const averageWaitTime = React.useMemo(() => {
     if (servedCustomers.length === 0) return 0;
+    
+    // Calculate wait time for each served customer (from arrival to when they started their haircut)
     const totalWaitTime = servedCustomers.reduce((total, customer) => {
-      const waitTime = (customer.timeServed || 0) - customer.timeArrived;
+      // Only count the actual waiting time (from arrival until they were served)
+      // This excludes the haircut service time itself
+      const waitTime = ((customer.timeServed || customer.timeArrived) - customer.timeArrived);
       return total + waitTime;
     }, 0);
-    return totalWaitTime / servedCustomers.length;
+    
+    // Round to 1 decimal place for display
+    return Math.round((totalWaitTime / servedCustomers.length) * 10) / 10;
   }, [servedCustomers]);
   
   // Initialize simulation
