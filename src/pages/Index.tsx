@@ -268,7 +268,7 @@ const Index = () => {
     assignCustomersToBarbers();
   };
   
-  // Assign waiting customers to any available barbers
+  // Assign waiting customers to any available barbers - improved
   const assignCustomersToBarbers = () => {
     if (waitingCustomers.length === 0) return false;
     
@@ -359,12 +359,12 @@ const Index = () => {
       return 0;
     }
     
-    // Make sure we always show at least some progress when service is active
+    // Calculate the exact progress percentage based on elapsed time vs total service time
     const totalServiceTime = barber.serviceEndTime - barber.currentServiceStartTime;
     const elapsedTime = currentTime - barber.currentServiceStartTime;
     
-    // Calculate progress as percentage - ensure it's between 0-100
-    const progress = Math.min(100, Math.max(1, (elapsedTime / totalServiceTime) * 100));
+    // Ensure progress is between 0-100%
+    const progress = Math.min(100, Math.max(0, (elapsedTime / totalServiceTime) * 100));
     return progress;
   };
   
@@ -374,7 +374,7 @@ const Index = () => {
     return currentCustomers.find(c => c.id === id);
   };
   
-  // Process a time step in the simulation - IMPROVED
+  // Process a time step in the simulation - IMPROVED FOR EXACT TIMING
   const processTimeStep = (timeStep: number) => {
     if (!isRunning) return;
     
@@ -384,8 +384,8 @@ const Index = () => {
     // Check for finishing haircuts
     const updatedBarbers = [...barbers];
     const finishedCustomers: Customer[] = [];
-    const stillServingCustomers: Customer[] = [...currentCustomers]; // Keep existing customers until we know they're finished
-    const customersToRemove: number[] = []; // Track IDs of customers to remove
+    const stillServingCustomers: Customer[] = [...currentCustomers]; 
+    const customersToRemove: number[] = []; 
     
     // Process each customer currently being served
     currentCustomers.forEach(customer => {
@@ -398,7 +398,7 @@ const Index = () => {
           const finishedCustomer = {
             ...customer,
             state: CustomerState.SERVED,
-            timeLeft: newTime
+            timeLeft: customer.serviceEndTime // Use exact service end time
           };
           
           // Add to finished customers list to update stats
@@ -436,7 +436,6 @@ const Index = () => {
               currentServiceStartTime: newTime,
               serviceEndTime: nextServiceEndTime,
               state: BarberState.WORKING
-              // Total customers served already updated above
             };
             
             // Add to currently serving customers
@@ -464,7 +463,6 @@ const Index = () => {
               servingCustomerId: null,
               currentServiceStartTime: undefined,
               serviceEndTime: undefined
-              // Total customers served already updated above
             };
             
             // Show toast notification

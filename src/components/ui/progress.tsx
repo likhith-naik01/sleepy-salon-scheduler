@@ -20,6 +20,11 @@ const Progress = React.forwardRef<
       className="h-full w-full flex-1 bg-primary transition-all"
       style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
     />
+    {value !== undefined && (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xs text-white font-medium">{Math.round(value)}%</span>
+      </div>
+    )}
   </ProgressPrimitive.Root>
 ))
 Progress.displayName = ProgressPrimitive.Root.displayName
