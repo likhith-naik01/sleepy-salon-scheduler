@@ -912,7 +912,11 @@ const Index = () => {
                         );
                       })}
                       
-                      {/* ... keep existing code (empty barbers state) */}
+                      {barbers.length === 0 && (
+                        <div className="w-full text-center py-12 text-gray-500">
+                          No barbers available. Press "Start Haircuts" to initialize the simulation.
+                        </div>
+                      )}
                     </div>
                   </div>
                   
