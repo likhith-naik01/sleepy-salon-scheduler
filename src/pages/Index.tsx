@@ -823,12 +823,6 @@ const Index = () => {
             </div>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-purple-600 mb-2">Sleeping Barber Simulation</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            An interactive visualization of the classic operating system synchronization problem
-          </p>
-          <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-800">
-            <Clock className="mr-1 h-4 w-4" /> Simulation Time: {formatTime(currentTime)}
-          </div>
         </header>
 
         <Tabs defaultValue="simulation" className="w-full">
