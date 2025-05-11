@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Info, Play, Pause, Bell, BellRing } from "lucide-react";
+import { Clock, User, Users, Scissors, Info, Play, Pause, Bell, BellRing, Code } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -1238,9 +1238,109 @@ const Index = () => {
                   </div>
                 </div>
                 
-                <p>
+                <p className="mb-6">
                   In this interactive simulation, you can experiment with different numbers of barbers, waiting chairs, service times,
                   and customer arrival rates to see how these parameters affect system performance and customer wait times.
+                </p>
+
+                <div className="mt-8 mb-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                    <Code className="h-5 w-5 text-purple-600" /> Sleeping Barber Algorithm
+                  </h3>
+                  
+                  <div className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto font-mono text-sm mb-6">
+                    <pre className="whitespace-pre-wrap">
+{`// Semaphores used in the algorithm
+mutex = Semaphore(1)         // Controls access to the waiting chairs
+barberReady = Semaphore(0)   // Signals barber is ready to cut hair
+customerReady = Semaphore(0) // Signals customer is ready for haircut
+
+// Variables
+waitingChairs = [0, 1, ..., N-1]  // N waiting chairs
+numberOfWaitingCustomers = 0      // Customers currently waiting`}
+                    </pre>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Barber Process */}
+                    <div className="rounded-lg border border-purple-200 overflow-hidden">
+                      <div className="bg-purple-100 p-3">
+                        <h4 className="font-medium text-purple-800">Barber Process</h4>
+                      </div>
+                      <div className="bg-slate-900 text-slate-50 p-4 font-mono text-sm overflow-x-auto h-full">
+                        <pre className="whitespace-pre-wrap">
+{`while (true) {
+  // If no customers, go to sleep
+  if (numberOfWaitingCustomers == 0)
+    sleep()  // Implementation: wait for signal
+  
+  // Acquire mutex to update waiting count
+  mutex.acquire()
+  numberOfWaitingCustomers--
+  
+  // Signal that barber is ready
+  barberReady.release()
+  
+  // Wait for customer to be ready
+  mutex.release()
+  customerReady.acquire()
+  
+  // Cut hair (outside critical section)
+  cutHair()
+}`}
+                        </pre>
+                      </div>
+                    </div>
+                    
+                    {/* Customer Process */}
+                    <div className="rounded-lg border border-blue-200 overflow-hidden">
+                      <div className="bg-blue-100 p-3">
+                        <h4 className="font-medium text-blue-800">Customer Process</h4>
+                      </div>
+                      <div className="bg-slate-900 text-slate-50 p-4 font-mono text-sm overflow-x-auto h-full">
+                        <pre className="whitespace-pre-wrap">
+{`// New customer arrives
+mutex.acquire()
+
+if (numberOfWaitingCustomers < waitingChairs.length) {
+  // Increment waiting count
+  numberOfWaitingCustomers++
+  
+  // Signal that customer is ready
+  customerReady.release()
+  
+  // Release mutex before waiting
+  mutex.release()
+  
+  // Wait for barber to be ready
+  barberReady.acquire()
+  
+  // Get haircut (outside critical section)
+  getHairCut()
+} else {
+  // No chairs available, leave
+  mutex.release()
+  leaveShop()
+}`}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <h4 className="font-medium mb-2">Key Algorithm Components:</h4>
+                    <ul className="list-disc pl-6 space-y-2 text-sm">
+                      <li><span className="font-bold">Mutex:</span> Ensures only one process can access the waiting chairs count at a time</li>
+                      <li><span className="font-bold">Semaphores:</span> barberReady and customerReady coordinate the customer-barber interaction</li>
+                      <li><span className="font-bold">Critical Section:</span> The code protected by mutex, where shared resources are accessed</li>
+                      <li><span className="font-bold">Bounded Waiting:</span> A customer will only wait if there's an available chair</li>
+                      <li><span className="font-bold">Starvation Freedom:</span> If a customer gets a chair, they will eventually get a haircut</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <p>
+                  This algorithm elegantly solves the producer-consumer problem in operating systems, where barbers are consumers of haircut requests and customers are producers of these requests. The waiting area acts as a bounded buffer.
                 </p>
               </CardContent>
             </Card>
