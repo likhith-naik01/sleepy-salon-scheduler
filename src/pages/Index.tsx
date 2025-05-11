@@ -282,11 +282,13 @@ const Index = () => {
     // For each sleeping barber, assign a customer if available
     const updatedBarbers = [...barbers];
     let customersAssigned = false;
+    const customersToRemove: number[] = [];
     
     for (const barberIndex of sleepingBarberIndices) {
       if (waitingCustomers.length > 0) {
         // Get next waiting customer
         const nextCustomer = waitingCustomers[0];
+        customersToRemove.push(nextCustomer.id);
         
         // Calculate when service will end based on service time
         const serviceEndTime = currentTime + serviceTime;
@@ -310,7 +312,7 @@ const Index = () => {
           waitingPosition: undefined
         };
         
-        // Add to serving list and track for removal from waiting
+        // Add to serving list
         setCurrentCustomers(prev => [...prev, updatedNextCustomer]);
         
         toast({
@@ -318,18 +320,21 @@ const Index = () => {
           description: `${nextCustomer.name} is now being served by Barber #${barberIndex + 1}.`,
         });
         
-        // Remove this customer from waiting list
-        const remainingWaiting = waitingCustomers.filter(c => c.id !== nextCustomer.id);
-        
-        // Update waiting positions for remaining customers
-        const updatedWaiting = remainingWaiting.map((customer, idx) => ({
-          ...customer,
-          waitingPosition: idx
-        }));
-        
-        setWaitingCustomers(updatedWaiting);
         customersAssigned = true;
       }
+    }
+    
+    // Remove assigned customers from waiting list
+    if (customersAssigned) {
+      const remainingWaiting = waitingCustomers.filter(c => !customersToRemove.includes(c.id));
+      
+      // Update waiting positions for remaining customers
+      const updatedWaiting = remainingWaiting.map((customer, idx) => ({
+        ...customer,
+        waitingPosition: idx
+      }));
+      
+      setWaitingCustomers(updatedWaiting);
     }
     
     // Update barber states
@@ -382,10 +387,10 @@ const Index = () => {
     setCurrentTime(newTime);
     
     // Check for finishing haircuts
-    const updatedBarbers = [...barbers];
+    let updatedBarbers = [...barbers];
     const finishedCustomers: Customer[] = [];
-    const stillServingCustomers: Customer[] = [...currentCustomers]; 
-    const customersToRemove: number[] = []; 
+    const updatedCurrentCustomers = [...currentCustomers];
+    const customersToRemove: number[] = [];
     
     // Process each customer currently being served
     currentCustomers.forEach(customer => {
@@ -401,11 +406,11 @@ const Index = () => {
             timeLeft: customer.serviceEndTime // Use exact service end time
           };
           
-          // Add to finished customers list to update stats
+          // Add to finished customers list
           finishedCustomers.push(finishedCustomer);
-          customersToRemove.push(customer.id); // Mark for removal from current customers
+          customersToRemove.push(customer.id);
           
-          // Update barber's total customers served count immediately
+          // Update barber's total customers served count
           updatedBarbers[barberId] = {
             ...updatedBarbers[barberId],
             totalCustomersServed: updatedBarbers[barberId].totalCustomersServed + 1,
@@ -415,11 +420,12 @@ const Index = () => {
           // Check if there's another waiting customer
           if (waitingCustomers.length > 0) {
             // Get the next waiting customer
-            const nextCustomer = waitingCustomers[0];
+            const nextCustomer = { ...waitingCustomers[0] };
             
             // Calculate service end time for the next customer
             const nextServiceEndTime = newTime + serviceTime;
             
+            // Update next customer state
             const updatedNextCustomer = {
               ...nextCustomer,
               state: CustomerState.GETTING_HAIRCUT,
@@ -438,22 +444,21 @@ const Index = () => {
               state: BarberState.WORKING
             };
             
-            // Add to currently serving customers
-            stillServingCustomers.push(updatedNextCustomer);
+            // Add next customer to current customers list
+            updatedCurrentCustomers.push(updatedNextCustomer);
+            
+            // Remove next customer from waiting list
+            const newWaiting = waitingCustomers.slice(1).map((c, idx) => ({
+              ...c,
+              waitingPosition: idx
+            }));
+            
+            setWaitingCustomers(newWaiting);
             
             // Show toast notification
             toast({
-              title: "Haircut Complete",
-              description: `${customer.name} finished their haircut. ${nextCustomer.name} is now being served by Barber #${barberId + 1}.`
-            });
-            
-            // Update waiting queue by removing the first customer
-            setWaitingCustomers(prev => {
-              const newWaiting = prev.slice(1).map((c, idx) => ({
-                ...c,
-                waitingPosition: idx
-              }));
-              return newWaiting;
+              title: "Next Customer",
+              description: `${finishedCustomer.name} finished haircut. ${nextCustomer.name} is now with Barber #${barberId + 1}.`
             });
           } else {
             // No customers waiting, barber goes to sleep
@@ -476,22 +481,17 @@ const Index = () => {
     });
     
     // Remove finished customers from current customers list
-    const updatedCurrentCustomers = stillServingCustomers.filter(
+    const remainingCustomers = updatedCurrentCustomers.filter(
       customer => !customersToRemove.includes(customer.id)
     );
     
-    // Update state with all changes
+    // Update all state
     setBarbers(updatedBarbers);
-    setCurrentCustomers(updatedCurrentCustomers);
+    setCurrentCustomers(remainingCustomers);
     
-    // Add newly served customers to the statistics immediately
+    // Add newly served customers to the statistics
     if (finishedCustomers.length > 0) {
       setServedCustomers(prev => [...prev, ...finishedCustomers]);
-    }
-    
-    // Check if we should assign any waiting customers to sleeping barbers
-    if (waitingCustomers.length > 0) {
-      assignCustomersToBarbers();
     }
     
     // Add random customer after state update if probability hits and simulation is running
