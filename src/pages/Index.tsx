@@ -939,7 +939,9 @@ const Index = () => {
                                     <div className="relative pt-1">
                                       <div className="flex justify-between items-center mb-1">
                                         <div className="text-xs font-medium">{customer.name}</div>
-                                        <div className="text-xs text-gray-500">{timeRemaining.toFixed(1)}s left</div>
+                                        <div className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                          {timeRemaining.toFixed(1)}s left
+                                        </div>
                                       </div>
                                       <Progress 
                                         value={serviceProgress} 
@@ -968,11 +970,7 @@ const Index = () => {
                         );
                       })}
                       
-                      {barbers.length === 0 && (
-                        <div className="text-center w-full py-8 text-gray-500">
-                          Start the simulation to see barbers
-                        </div>
-                      )}
+                      {/* ... keep existing code (empty barbers state) */}
                     </div>
                   </div>
                   
