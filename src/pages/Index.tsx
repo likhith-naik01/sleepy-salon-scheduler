@@ -737,40 +737,8 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label htmlFor="numBarbers">Number of Barbers: {numBarbers}</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => updateBarberCount(numBarbers - 1)}
-                          disabled={numBarbers <= 1}
-                        >
-                          -
-                        </Button>
-                        <Slider
-                          id="numBarbers"
-                          min={1}
-                          max={5}
-                          step={1}
-                          value={[numBarbers]}
-                          onValueChange={(values) => updateBarberCount(values[0])}
-                        />
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateBarberCount(numBarbers + 1)}
-                          disabled={numBarbers >= 5}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                    
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <Label htmlFor="numChairs">Waiting Chairs: {numChairs}</Label>
@@ -802,9 +770,7 @@ const Index = () => {
                         </Button>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-4">
+                    
                     <div className="space-y-2">
                       <Label htmlFor="serviceTime">Service Time: {serviceTime}s</Label>
                       <Slider
@@ -814,30 +780,6 @@ const Index = () => {
                         step={1}
                         value={[serviceTime]}
                         onValueChange={(values) => setServiceTime(values[0])}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="simulationSpeed">Simulation Speed: {simulationSpeed}x</Label>
-                      <Slider
-                        id="simulationSpeed"
-                        min={0.5}
-                        max={5}
-                        step={0.5}
-                        value={[simulationSpeed]}
-                        onValueChange={(values) => setSimulationSpeed(values[0])}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="arrivalRate">Customer Arrival Rate: {arrivalRate}/minute</Label>
-                      <Slider
-                        id="arrivalRate"
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[arrivalRate]}
-                        onValueChange={(values) => setArrivalRate(values[0])}
                       />
                     </div>
                   </div>
