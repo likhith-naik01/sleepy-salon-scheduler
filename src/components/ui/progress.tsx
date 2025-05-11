@@ -22,7 +22,7 @@ const Progress = React.forwardRef<
     />
     {value !== undefined && (
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs text-white font-medium">{Math.round(value)}%</span>
+        <span className="text-xs text-white font-medium shadow-sm">{Math.round(value)}%</span>
       </div>
     )}
   </ProgressPrimitive.Root>

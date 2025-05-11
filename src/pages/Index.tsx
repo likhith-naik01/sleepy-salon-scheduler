@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Info, Play, Pause } from "lucide-react";
+import { Clock, User, Users, Scissors, Info, Play, Pause, Bell, BellRing } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -74,12 +73,18 @@ const Index = () => {
   const [servedCustomers, setServedCustomers] = useState<Customer[]>([]);
   const [turnedAwayCustomers, setTurnedAwayCustomers] = useState<Customer[]>([]);
   
+  // Interactive visualization states
+  const [lastActiveBarber, setLastActiveBarber] = useState<number | null>(null);
+  const [lastServedCustomer, setLastServedCustomer] = useState<number | null>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
+  
   // Customer input fields
   const [customerName, setCustomerName] = useState('');
   
   // Animation frame reference
   const animationRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
+  const secondTickRef = useRef<number>(0);
   
   // Metrics
   const averageWaitTime = React.useMemo(() => {
@@ -94,6 +99,11 @@ const Index = () => {
   // Initialize simulation
   useEffect(() => {
     initializeSimulation();
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, []);
   
   const initializeSimulation = () => {
@@ -113,6 +123,9 @@ const Index = () => {
     setCurrentTime(0);
     setNextCustomerId(1);
     setIsPaused(false);
+    setLastActiveBarber(null);
+    setLastServedCustomer(null);
+    setNotificationCount(0);
     
     // Stop any existing animation
     if (animationRef.current) {
@@ -214,10 +227,13 @@ const Index = () => {
       setBarbers(updatedBarbers);
       setCurrentCustomers(prev => [...prev, newCustomer]);
       setNextCustomerId(nextId + 1);
+      setLastActiveBarber(sleepingBarberId);
+      setLastServedCustomer(nextId);
+      setNotificationCount(prev => prev + 1);
       
       toast({
-        title: "Customer Seated",
-        description: `${name} is now getting a haircut from Barber #${sleepingBarberId + 1}`
+        title: "Barber Woke Up!",
+        description: `${name} has woken up Barber #${sleepingBarberId + 1} who is now giving a haircut!`
       });
       
       // Start simulation if it's not running
@@ -241,6 +257,7 @@ const Index = () => {
 
       setWaitingCustomers(prev => [...prev, newCustomer]);
       setNextCustomerId(nextId + 1);
+      setNotificationCount(prev => prev + 1);
       
       toast({
         title: "Added to Waiting List",
@@ -267,6 +284,7 @@ const Index = () => {
 
       setTurnedAwayCustomers(prev => [...prev, newCustomer]);
       setNextCustomerId(nextId + 1);
+      setNotificationCount(prev => prev + 1);
       
       toast({
         title: "Customer Turned Away",
@@ -301,6 +319,7 @@ const Index = () => {
       setIsRunning(true);
       setIsPaused(false);
       lastTimeRef.current = performance.now();
+      secondTickRef.current = 0;
       animationRef.current = requestAnimationFrame(animationLoop);
       
       toast({
@@ -370,9 +389,13 @@ const Index = () => {
         // Add to serving list
         setCurrentCustomers(prev => [...prev, updatedNextCustomer]);
         
+        // Update interactive state
+        setLastActiveBarber(barberIndex);
+        setLastServedCustomer(nextCustomer.id);
+        
         toast({
-          title: "Haircut Started",
-          description: `${nextCustomer.name} is now being served by Barber #${barberIndex + 1}.`,
+          title: "Barber Woke Up!",
+          description: `${nextCustomer.name} has woken up Barber #${barberIndex + 1} who is now giving a haircut!`
         });
         
         customersAssigned = true;
@@ -407,6 +430,22 @@ const Index = () => {
     // Scale time based on simulation speed (convert ms to seconds)
     const timeStep = (deltaTime / 1000) * simulationSpeed;
     
+    // Update second tick counter
+    secondTickRef.current += timeStep;
+    
+    // If a full second has passed, check if we need to update any UI elements
+    if (secondTickRef.current >= 1) {
+      secondTickRef.current = 0;
+      
+      // Reset last active indicators after a second for visual feedback
+      if (lastActiveBarber !== null || lastServedCustomer !== null) {
+        setTimeout(() => {
+          setLastActiveBarber(null);
+          setLastServedCustomer(null);
+        }, 1000);
+      }
+    }
+    
     processTimeStep(timeStep);
     animationRef.current = requestAnimationFrame(animationLoop);
   };
@@ -426,6 +465,16 @@ const Index = () => {
     // Ensure progress is between 0-100%
     const progress = Math.min(100, Math.max(0, (elapsedTime / totalServiceTime) * 100));
     return progress;
+  };
+
+  // Calculate time remaining for a haircut in seconds
+  const getTimeRemaining = (barber: Barber): number => {
+    if (barber.state !== BarberState.WORKING || !barber.serviceEndTime) {
+      return 0;
+    }
+    
+    const timeRemaining = Math.max(0, barber.serviceEndTime - currentTime);
+    return Math.round(timeRemaining * 10) / 10; // Round to 1 decimal place
   };
   
   // Get customer by ID
@@ -472,6 +521,9 @@ const Index = () => {
             servingCustomerId: null
           };
           
+          // Increment notification count
+          setNotificationCount(prev => prev + 1);
+          
           // Check if there's another waiting customer
           if (waitingCustomers.length > 0) {
             // Get the next waiting customer
@@ -510,6 +562,10 @@ const Index = () => {
             
             setWaitingCustomers(newWaiting);
             
+            // Update interactive state
+            setLastActiveBarber(barberId);
+            setLastServedCustomer(nextCustomer.id);
+            
             // Show toast notification
             toast({
               title: "Next Customer",
@@ -527,7 +583,7 @@ const Index = () => {
             
             // Show toast notification
             toast({
-              title: "Haircut Complete",
+              title: "Barber Sleeping",
               description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`
             });
           }
@@ -639,11 +695,26 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <header className="mb-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-salon-secondary mb-2">Sleeping Barber Simulation</h1>
+        <header className="mb-8 text-center relative">
+          <div className="absolute right-0 top-0">
+            <div className="relative">
+              {notificationCount > 0 && (
+                <div className="absolute -right-1 -top-1">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                </div>
+              )}
+              <BellRing className={`h-6 w-6 ${notificationCount > 0 ? 'text-red-500 animate-pulse' : 'text-gray-400'}`} />
+            </div>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-purple-600 mb-2">Sleeping Barber Simulation</h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            An educational visualization of the classic operating system synchronization problem
+            An interactive visualization of the classic operating system synchronization problem
           </p>
+          <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-800">
+            <Clock className="mr-1 h-4 w-4" /> Simulation Time: {formatTime(currentTime)}
+          </div>
         </header>
 
         <Tabs defaultValue="simulation" className="w-full">
@@ -774,7 +845,7 @@ const Index = () => {
               </CardContent>
               <CardFooter className="flex justify-between">
                 <div className="text-sm text-muted-foreground">
-                  Simulation Time: {formatTime(currentTime)}
+                  Updates every second - Interactive visualization
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={resetSimulation}>
@@ -817,33 +888,63 @@ const Index = () => {
                   <div className="md:col-span-2">
                     <h3 className="text-lg font-medium mb-3">Barber Stations</h3>
                     <div className="barber-shop-floor p-4 flex flex-wrap gap-6">
-                      {barbers.map((barber) => {
+                      {barbers.map((barber, index) => {
                         const customer = getCustomerById(barber.servingCustomerId);
                         const serviceProgress = getServiceProgress(barber);
+                        const timeRemaining = getTimeRemaining(barber);
+                        const isActive = lastActiveBarber === index;
                         
                         return (
-                          <div key={barber.id} className="relative">
-                            <div className={`barber p-4 rounded-lg border ${barber.state === BarberState.SLEEPING ? 'bg-gray-100' : 'bg-green-50 border-green-200'}`}>
+                          <div 
+                            key={barber.id} 
+                            className={`relative transition-all duration-300 ${isActive ? 'scale-105' : ''}`}
+                          >
+                            <div 
+                              className={`barber p-4 rounded-lg border shadow-md transition-all duration-300 ${
+                                barber.state === BarberState.SLEEPING 
+                                  ? 'bg-gray-100 border-gray-200' 
+                                  : isActive 
+                                    ? 'bg-green-100 border-green-400 shadow-lg' 
+                                    : 'bg-green-50 border-green-200'
+                              }`}
+                            >
                               <div className="flex flex-col items-center space-y-2">
-                                <Scissors className={`w-6 h-6 ${barber.state === BarberState.SLEEPING ? 'text-gray-400' : 'text-green-600'}`} />
+                                <Scissors 
+                                  className={`w-6 h-6 transition-all duration-300 ${
+                                    barber.state === BarberState.SLEEPING 
+                                      ? 'text-gray-400' 
+                                      : isActive 
+                                        ? 'text-green-700 animate-pulse' 
+                                        : 'text-green-600'
+                                  }`} 
+                                />
                                 <div className="mt-2 text-center text-sm font-medium">
                                   Barber #{barber.id}
                                 </div>
-                                <div className={`text-xs text-center font-medium ${barber.state === BarberState.SLEEPING ? 'text-gray-500' : 'text-green-600'}`}>
+                                <div 
+                                  className={`px-2 py-1 rounded-full text-xs text-center font-medium ${
+                                    barber.state === BarberState.SLEEPING 
+                                      ? 'bg-gray-200 text-gray-700' 
+                                      : 'bg-green-200 text-green-800'
+                                  }`}
+                                >
                                   {barber.state === BarberState.SLEEPING ? 'Sleeping' : 'Working'}
                                 </div>
-                                <div className="text-xs">
+                                <div className="text-xs border-t border-dashed border-gray-200 pt-1 mt-1 w-full text-center">
                                   Customers Served: {barber.totalCustomersServed}
                                 </div>
                                 
                                 {barber.state === BarberState.WORKING && customer && (
-                                  <div className="mt-2 w-full">
+                                  <div className="mt-2 w-full animate-fade-in">
                                     <div className="relative pt-1">
-                                      <div className="text-xs text-center mb-1 font-medium">{customer.name}</div>
-                                      <Progress value={serviceProgress} className="h-2" />
-                                      <div className="text-xs text-center mt-1">
-                                        {Math.round(serviceProgress)}% complete
+                                      <div className="flex justify-between items-center mb-1">
+                                        <div className="text-xs font-medium">{customer.name}</div>
+                                        <div className="text-xs text-gray-500">{timeRemaining.toFixed(1)}s left</div>
                                       </div>
+                                      <Progress 
+                                        value={serviceProgress} 
+                                        className={`h-3 ${isActive ? 'bg-green-200' : ''}`} 
+                                      />
                                     </div>
                                   </div>
                                 )}
@@ -852,7 +953,13 @@ const Index = () => {
                             
                             {barber.servingCustomerId && (
                               <div className="absolute -right-4 -top-4">
-                                <div className="bg-blue-500 text-white p-2 rounded-full flex items-center justify-center animate-pulse">
+                                <div 
+                                  className={`${
+                                    lastServedCustomer === barber.servingCustomerId 
+                                      ? 'bg-blue-600 animate-pulse' 
+                                      : 'bg-blue-500'
+                                  } text-white p-2 rounded-full flex items-center justify-center shadow-md`}
+                                >
                                   <User className="w-4 h-4" />
                                 </div>
                               </div>
@@ -871,25 +978,46 @@ const Index = () => {
                   
                   {/* Waiting Area */}
                   <div>
-                    <h3 className="text-lg font-medium mb-3">Waiting Area ({waitingCustomers.length}/{numChairs})</h3>
-                    <div className="waiting-area min-h-[200px] max-h-[400px] overflow-y-auto bg-slate-50 p-3 rounded-md border border-slate-200">
-                      {waitingCustomers.map((customer, index) => (
-                        <div key={customer.id} className="flex items-center gap-2 p-2 mb-2 bg-white rounded-md shadow-sm">
-                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <div className="text-sm font-medium truncate">{customer.name}</div>
-                            <div className="text-xs text-gray-500">Position: {index + 1}</div>
-                            <div className="text-xs text-gray-500">
-                              Waiting for: {formatTime(currentTime - customer.timeArrived)}
+                    <h3 className="text-lg font-medium mb-3">
+                      <div className="flex items-center justify-between">
+                        <span>Waiting Area ({waitingCustomers.length}/{numChairs})</span>
+                        {waitingCustomers.length > 0 && (
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                            Customers Waiting
+                          </span>
+                        )}
+                      </div>
+                    </h3>
+                    <div className="waiting-area min-h-[200px] max-h-[400px] overflow-y-auto bg-slate-50 p-3 rounded-md border border-slate-200 shadow-inner">
+                      {waitingCustomers.map((customer, index) => {
+                        const waitingTime = currentTime - customer.timeArrived;
+                        let urgencyColor = 'bg-blue-100 text-blue-800';
+                        if (waitingTime > 30) urgencyColor = 'bg-red-100 text-red-800';
+                        else if (waitingTime > 15) urgencyColor = 'bg-yellow-100 text-yellow-800';
+                        
+                        return (
+                          <div 
+                            key={customer.id} 
+                            className="flex items-center gap-2 p-2 mb-2 bg-white rounded-md shadow-sm hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                              <User className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                              <div className="text-sm font-medium truncate">{customer.name}</div>
+                              <div className="flex justify-between items-center">
+                                <div className="text-xs text-gray-500">Position: {index + 1}</div>
+                                <div className={`text-xs px-1.5 py-0.5 rounded-full ${urgencyColor}`}>
+                                  {formatTime(waitingTime)}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       
                       {waitingCustomers.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
+                        <div className="text-center py-8 text-gray-500 animate-pulse">
                           No customers waiting
                         </div>
                       )}
@@ -909,22 +1037,22 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-green-100 p-4 rounded-lg">
+                  <div className="bg-green-100 p-4 rounded-lg shadow-sm">
                     <div className="text-lg font-bold">{servedCustomers.length}</div>
                     <div className="text-sm text-gray-600">Customers Served</div>
                   </div>
                   
-                  <div className="bg-blue-100 p-4 rounded-lg">
+                  <div className="bg-blue-100 p-4 rounded-lg shadow-sm">
                     <div className="text-lg font-bold">{waitingCustomers.length}</div>
                     <div className="text-sm text-gray-600">Currently Waiting</div>
                   </div>
                   
-                  <div className="bg-red-100 p-4 rounded-lg">
+                  <div className="bg-red-100 p-4 rounded-lg shadow-sm">
                     <div className="text-lg font-bold">{turnedAwayCustomers.length}</div>
                     <div className="text-sm text-gray-600">Turned Away</div>
                   </div>
                   
-                  <div className="bg-yellow-100 p-4 rounded-lg">
+                  <div className="bg-yellow-100 p-4 rounded-lg shadow-sm">
                     <div className="text-lg font-bold">{averageWaitTime.toFixed(1)}s</div>
                     <div className="text-sm text-gray-600">Avg Wait Time</div>
                   </div>
@@ -1004,14 +1132,55 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <Alert className="mb-4 bg-purple-50 border-purple-200">
+                  <AlertTitle className="flex items-center gap-2">
+                    <Scissors className="h-4 w-4" /> What is the Sleeping Barber Problem?
+                  </AlertTitle>
+                  <AlertDescription className="mt-2">
+                    The Sleeping Barber Problem is a classic synchronization problem in computer science used to illustrate
+                    inter-process communication and synchronization between multiple operating system processes.
+                  </AlertDescription>
+                </Alert>
+                
                 <p className="mb-4">
-                  The Sleeping Barber Problem is a classic synchronization problem in computer science and operating systems. It involves a barber shop with a fixed number of barbers and chairs. Customers arrive at the shop and wait in a queue until a barber is available to serve them. The barber must alternate between sleeping and serving customers, and the problem arises when a new customer arrives while the barber is already serving another customer.
+                  The Sleeping Barber Problem involves a barbershop with a limited number of chairs and one or more barbers. 
+                  When there are no customers, the barber goes to sleep (becomes idle). When a customer arrives, they either:
                 </p>
+                
+                <ul className="list-disc pl-6 mb-4 space-y-2">
+                  <li>Wake up a sleeping barber if one is available</li>
+                  <li>Wait in an empty chair if all barbers are busy but chairs are available</li>
+                  <li>Leave if all chairs are occupied</li>
+                </ul>
+                
                 <p className="mb-4">
-                  The problem can be solved using various synchronization techniques, such as semaphores, mutexes, and condition variables. The goal is to ensure that the barber does not wake up and serve a new customer before the current customer has finished their haircut, and that the barber does not fall asleep while there are still customers waiting.
+                  In computing terms, this represents how processes synchronize access to limited resources and how they handle
+                  contention when resources are fully utilized.
                 </p>
+                
+                <p className="mb-4 font-medium">Key Synchronization Concepts Illustrated:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <h4 className="font-medium text-blue-800 mb-1">Mutual Exclusion</h4>
+                    <p className="text-sm">Ensuring only one process can access a resource at a time (one customer per barber)</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                    <h4 className="font-medium text-green-800 mb-1">Semaphores</h4>
+                    <p className="text-sm">Controlling access to resources with limited availability (waiting chairs)</p>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                    <h4 className="font-medium text-yellow-800 mb-1">Producer-Consumer</h4>
+                    <p className="text-sm">Customers (producers) and barbers (consumers) coordinating through a buffer (waiting area)</p>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                    <h4 className="font-medium text-purple-800 mb-1">Deadlock Prevention</h4>
+                    <p className="text-sm">System design prevents deadlocks where no process can proceed</p>
+                  </div>
+                </div>
+                
                 <p>
-                  The Sleeping Barber Problem is a fundamental example of how synchronization issues can arise in concurrent programming and how they can be addressed using appropriate synchronization mechanisms.
+                  In this interactive simulation, you can experiment with different numbers of barbers, waiting chairs, service times,
+                  and customer arrival rates to see how these parameters affect system performance and customer wait times.
                 </p>
               </CardContent>
             </Card>
