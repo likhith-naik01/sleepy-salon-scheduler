@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Info, Play, Circle } from "lucide-react";
+import { Clock, User, Users, Scissors, Info, Play, Pause } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -62,6 +63,7 @@ const Index = () => {
   const [arrivalRate, setArrivalRate] = useState(3); // customers per minute
   const [simulationSpeed, setSimulationSpeed] = useState(1);
   const [isRunning, setIsRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   
   // Simulation state
   const [currentTime, setCurrentTime] = useState(0);
@@ -110,6 +112,7 @@ const Index = () => {
     setTurnedAwayCustomers([]);
     setCurrentTime(0);
     setNextCustomerId(1);
+    setIsPaused(false);
     
     // Stop any existing animation
     if (animationRef.current) {
@@ -121,6 +124,7 @@ const Index = () => {
   // Reset simulation
   const resetSimulation = () => {
     setIsRunning(false);
+    setIsPaused(false);
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = undefined;
@@ -131,6 +135,32 @@ const Index = () => {
       title: "Simulation Reset",
       description: "All barbers are now sleeping and waiting for customers.",
     });
+  };
+  
+  // Toggle pause/resume simulation
+  const togglePauseSimulation = () => {
+    if (isRunning) {
+      setIsPaused(!isPaused);
+      
+      if (isPaused) {
+        // Resuming simulation
+        toast({
+          title: "Simulation Resumed",
+          description: "Haircuts and customer flow will continue.",
+        });
+        lastTimeRef.current = performance.now();
+        animationRef.current = requestAnimationFrame(animationLoop);
+      } else {
+        // Pausing simulation
+        toast({
+          title: "Simulation Paused",
+          description: "Haircuts and customer flow are now paused.",
+        });
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+      }
+    }
   };
   
   // Add a customer manually via the booking form
@@ -193,6 +223,7 @@ const Index = () => {
       // Start simulation if it's not running
       if (!isRunning) {
         setIsRunning(true);
+        setIsPaused(false);
         lastTimeRef.current = performance.now();
         animationRef.current = requestAnimationFrame(animationLoop);
       }
@@ -215,6 +246,14 @@ const Index = () => {
         title: "Added to Waiting List",
         description: `${name} is now waiting (position #${waitingCustomers.length + 1})`
       });
+      
+      // Start simulation if it's not running
+      if (!isRunning) {
+        setIsRunning(true);
+        setIsPaused(false);
+        lastTimeRef.current = performance.now();
+        animationRef.current = requestAnimationFrame(animationLoop);
+      }
     } 
     // If waiting area is full, turn away the customer
     else {
@@ -260,8 +299,24 @@ const Index = () => {
     // Start simulation timer if it's not already running
     if (!isRunning) {
       setIsRunning(true);
+      setIsPaused(false);
       lastTimeRef.current = performance.now();
       animationRef.current = requestAnimationFrame(animationLoop);
+      
+      toast({
+        title: "Simulation Started",
+        description: "Barbers will now serve customers.",
+      });
+    } else if (isPaused) {
+      // Resume if paused
+      setIsPaused(false);
+      lastTimeRef.current = performance.now();
+      animationRef.current = requestAnimationFrame(animationLoop);
+      
+      toast({
+        title: "Simulation Resumed",
+        description: "Barbers will continue serving customers.",
+      });
     }
     
     // For each sleeping barber, assign a customer if available
@@ -344,7 +399,7 @@ const Index = () => {
   
   // Animation loop
   const animationLoop = (timestamp: number) => {
-    if (!isRunning) return;
+    if (!isRunning || isPaused) return;
     
     const deltaTime = timestamp - lastTimeRef.current;
     lastTimeRef.current = timestamp;
@@ -381,7 +436,7 @@ const Index = () => {
   
   // Process a time step in the simulation - IMPROVED FOR EXACT TIMING
   const processTimeStep = (timeStep: number) => {
-    if (!isRunning) return;
+    if (!isRunning || isPaused) return;
     
     const newTime = currentTime + timeStep;
     setCurrentTime(newTime);
@@ -495,7 +550,7 @@ const Index = () => {
     }
     
     // Add random customer after state update if probability hits and simulation is running
-    if (Math.random() < (arrivalRate / 60) * timeStep && isRunning) {
+    if (Math.random() < (arrivalRate / 60) * timeStep && isRunning && !isPaused) {
       addRandomCustomer();
     }
   };
@@ -725,14 +780,25 @@ const Index = () => {
                   <Button variant="outline" onClick={resetSimulation}>
                     Reset
                   </Button>
-                  <Button 
-                    variant="success" 
-                    onClick={startHaircuts} 
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Play className="h-4 w-4" />
-                    Start Haircuts
-                  </Button>
+                  {isRunning && !isPaused ? (
+                    <Button 
+                      variant="secondary" 
+                      onClick={togglePauseSimulation}
+                      className="flex items-center gap-2"
+                    >
+                      <Pause className="h-4 w-4" />
+                      Pause
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="success" 
+                      onClick={startHaircuts} 
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Play className="h-4 w-4" />
+                      {isPaused ? "Resume" : "Start Haircuts"}
+                    </Button>
+                  )}
                 </div>
               </CardFooter>
             </Card>
@@ -786,7 +852,7 @@ const Index = () => {
                             
                             {barber.servingCustomerId && (
                               <div className="absolute -right-4 -top-4">
-                                <div className="customer bg-blue-500 text-white p-2 rounded-full">
+                                <div className="bg-blue-500 text-white p-2 rounded-full flex items-center justify-center animate-pulse">
                                   <User className="w-4 h-4" />
                                 </div>
                               </div>
@@ -919,8 +985,8 @@ const Index = () => {
                       />
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    <Button type="submit" variant="success">
+                  <div className="flex justify-end mt-4">
+                    <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
                       Add Customer
                     </Button>
                   </div>
@@ -938,10 +1004,10 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p>
+                <p className="mb-4">
                   The Sleeping Barber Problem is a classic synchronization problem in computer science and operating systems. It involves a barber shop with a fixed number of barbers and chairs. Customers arrive at the shop and wait in a queue until a barber is available to serve them. The barber must alternate between sleeping and serving customers, and the problem arises when a new customer arrives while the barber is already serving another customer.
                 </p>
-                <p>
+                <p className="mb-4">
                   The problem can be solved using various synchronization techniques, such as semaphores, mutexes, and condition variables. The goal is to ensure that the barber does not wake up and serve a new customer before the current customer has finished their haircut, and that the barber does not fall asleep while there are still customers waiting.
                 </p>
                 <p>
