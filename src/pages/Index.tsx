@@ -351,17 +351,20 @@ const Index = () => {
     animationRef.current = requestAnimationFrame(animationLoop);
   };
   
-  // Calculate service progress as a percentage
+  // Calculate service progress as a percentage - IMPROVED
   const getServiceProgress = (barber: Barber): number => {
-    if (barber.state !== BarberState.WORKING || !barber.currentServiceStartTime || !barber.serviceEndTime) {
+    if (barber.state !== BarberState.WORKING || 
+        !barber.currentServiceStartTime || 
+        !barber.serviceEndTime) {
       return 0;
     }
     
+    // Make sure we always show at least some progress when service is active
     const totalServiceTime = barber.serviceEndTime - barber.currentServiceStartTime;
     const elapsedTime = currentTime - barber.currentServiceStartTime;
     
-    // Calculate progress as percentage
-    const progress = Math.min(100, Math.max(0, (elapsedTime / totalServiceTime) * 100));
+    // Calculate progress as percentage - ensure it's between 0-100
+    const progress = Math.min(100, Math.max(1, (elapsedTime / totalServiceTime) * 100));
     return progress;
   };
   
@@ -371,7 +374,7 @@ const Index = () => {
     return currentCustomers.find(c => c.id === id);
   };
   
-  // Process a time step in the simulation
+  // Process a time step in the simulation - IMPROVED
   const processTimeStep = (timeStep: number) => {
     if (!isRunning) return;
     
@@ -381,7 +384,8 @@ const Index = () => {
     // Check for finishing haircuts
     const updatedBarbers = [...barbers];
     const finishedCustomers: Customer[] = [];
-    const stillServingCustomers: Customer[] = [];
+    const stillServingCustomers: Customer[] = [...currentCustomers]; // Keep existing customers until we know they're finished
+    const customersToRemove: number[] = []; // Track IDs of customers to remove
     
     // Process each customer currently being served
     currentCustomers.forEach(customer => {
@@ -399,6 +403,7 @@ const Index = () => {
           
           // Add to finished customers list to update stats
           finishedCustomers.push(finishedCustomer);
+          customersToRemove.push(customer.id); // Mark for removal from current customers
           
           // Update barber's total customers served count immediately
           updatedBarbers[barberId] = {
@@ -434,7 +439,7 @@ const Index = () => {
               // Total customers served already updated above
             };
             
-            // Add customer to currently being served
+            // Add to currently serving customers
             stillServingCustomers.push(updatedNextCustomer);
             
             // Show toast notification
@@ -468,16 +473,18 @@ const Index = () => {
               description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`
             });
           }
-        } else {
-          // Customer still getting haircut
-          stillServingCustomers.push(customer);
         }
       }
     });
     
+    // Remove finished customers from current customers list
+    const updatedCurrentCustomers = stillServingCustomers.filter(
+      customer => !customersToRemove.includes(customer.id)
+    );
+    
     // Update state with all changes
     setBarbers(updatedBarbers);
-    setCurrentCustomers(stillServingCustomers);
+    setCurrentCustomers(updatedCurrentCustomers);
     
     // Add newly served customers to the statistics immediately
     if (finishedCustomers.length > 0) {
@@ -899,3 +906,56 @@ const Index = () => {
                 <CardTitle>Book a Haircut</CardTitle>
                 <CardDescription>
                   Enter customer information to add them to the queue
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleBooking}>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="customerName">Customer Name</Label>
+                      <Input
+                        id="customerName"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Enter customer name"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button type="submit" variant="success">
+                      Add Customer
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="explanation" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  The Sleeping Barber Problem
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>
+                  The Sleeping Barber Problem is a classic synchronization problem in computer science and operating systems. It involves a barber shop with a fixed number of barbers and chairs. Customers arrive at the shop and wait in a queue until a barber is available to serve them. The barber must alternate between sleeping and serving customers, and the problem arises when a new customer arrives while the barber is already serving another customer.
+                </p>
+                <p>
+                  The problem can be solved using various synchronization techniques, such as semaphores, mutexes, and condition variables. The goal is to ensure that the barber does not wake up and serve a new customer before the current customer has finished their haircut, and that the barber does not fall asleep while there are still customers waiting.
+                </p>
+                <p>
+                  The Sleeping Barber Problem is a fundamental example of how synchronization issues can arise in concurrent programming and how they can be addressed using appropriate synchronization mechanisms.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default Index;
