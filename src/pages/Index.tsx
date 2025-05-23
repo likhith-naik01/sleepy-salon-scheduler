@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Play, Pause, Bell, BellRing } from "lucide-react";
+import { Clock, User, Users, Scissors, Play, Pause, Bell, BellRing, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -88,6 +88,7 @@ const Index = () => {
   
   // Background particles
   const particlesRef = useRef<HTMLDivElement>(null);
+  const starsRef = useRef<HTMLDivElement>(null);
   
   // Metrics - Fix average wait time calculation
   const averageWaitTime = React.useMemo(() => {
@@ -109,6 +110,7 @@ const Index = () => {
   useEffect(() => {
     initializeSimulation();
     createParticles();
+    createStars();
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -144,6 +146,39 @@ const Index = () => {
       particle.style.animationDelay = `-${Math.random() * duration}s`;
       
       particlesContainer.appendChild(particle);
+    }
+  };
+  
+  const createStars = () => {
+    if (!starsRef.current) return;
+    
+    const starsContainer = starsRef.current;
+    starsContainer.innerHTML = '';
+    
+    // Create twinkling stars
+    for (let i = 0; i < 100; i++) {
+      const star = document.createElement('div');
+      
+      // Random size for stars
+      const size = Math.random() * 3 + 1;
+      const opacity = Math.random() * 0.7 + 0.3;
+      
+      star.className = 'absolute rounded-full pointer-events-none';
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
+      star.style.boxShadow = `0 0 ${size + 2}px rgba(255, 255, 255, 0.8)`;
+      
+      // Random position
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      
+      // Twinkling animation
+      const duration = Math.random() * 4 + 2;
+      star.style.animation = `twinkle ${duration}s ease-in-out infinite`;
+      star.style.animationDelay = `-${Math.random() * duration}s`;
+      
+      starsContainer.appendChild(star);
     }
   };
   
@@ -848,6 +883,10 @@ const Index = () => {
         ref={particlesRef}
         className="fixed inset-0 pointer-events-none overflow-hidden z-0"
       />
+      <div 
+        ref={starsRef}
+        className="fixed inset-0 pointer-events-none overflow-hidden z-0"
+      />
       
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto p-6">
@@ -864,16 +903,20 @@ const Index = () => {
               <BellRing className={`h-6 w-6 ${notificationCount > 0 ? 'text-red-300 animate-pulse' : 'text-gray-300'}`} />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300 mb-2 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300 mb-2 animate-bounce-slow">
             Sleeping Barber
           </h1>
+          <div className="inline-block relative">
+            <Sparkles className="absolute -left-8 -top-6 h-5 w-5 text-yellow-300 animate-spin-slow" />
+            <Sparkles className="absolute -right-8 -top-4 h-4 w-4 text-blue-300 animate-spin-slow-reverse" />
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left panel - Controls */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-6 animate-fade-in">
             {/* Controls Panel */}
-            <Card className="border border-purple-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden">
+            <Card className="border border-purple-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden hover:shadow-glow-purple transition-all duration-500">
               <CardHeader className="border-b border-purple-500/20 bg-purple-900/40">
                 <CardTitle className="flex items-center gap-2 text-purple-100">
                   <Clock className="h-5 w-5 text-purple-200" />
@@ -1010,7 +1053,7 @@ const Index = () => {
                 <Button 
                   variant="outline" 
                   onClick={resetSimulation}
-                  className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100"
+                  className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 hover:scale-105 transition-transform duration-300"
                 >
                   Reset
                 </Button>
@@ -1018,7 +1061,7 @@ const Index = () => {
                   <Button 
                     variant="secondary" 
                     onClick={togglePauseSimulation}
-                    className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+                    className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white hover:scale-105 transition-transform duration-300"
                   >
                     <Pause className="h-4 w-4" />
                     Pause
@@ -1027,7 +1070,7 @@ const Index = () => {
                   <Button 
                     variant="default" 
                     onClick={startHaircuts} 
-                    className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+                    className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105 transition-transform duration-300"
                   >
                     <Play className="h-4 w-4" />
                     {isPaused ? "Resume" : "Start"}
@@ -1037,7 +1080,7 @@ const Index = () => {
             </Card>
             
             {/* Stats */}
-            <Card className="border border-blue-500/20 bg-black/40 backdrop-blur-lg text-white">
+            <Card className="border border-blue-500/20 bg-black/40 backdrop-blur-lg text-white hover:shadow-glow-blue transition-all duration-500">
               <CardHeader className="border-b border-blue-500/20 bg-blue-900/40">
                 <CardTitle className="flex items-center gap-2 text-blue-100">
                   <Users className="h-5 w-5 text-blue-200" />
@@ -1071,9 +1114,9 @@ const Index = () => {
           </div>
           
           {/* Right panel - Main visualization */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 space-y-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
             {/* Barber Stations */}
-            <Card className="border border-indigo-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden">
+            <Card className="border border-indigo-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden hover:shadow-glow-indigo transition-all duration-500">
               <CardHeader className="border-b border-indigo-500/20 bg-indigo-900/40">
                 <CardTitle className="flex items-center gap-2 text-indigo-100">
                   <Scissors className="h-5 w-5 text-indigo-200" />
@@ -1091,10 +1134,11 @@ const Index = () => {
                     return (
                       <div 
                         key={barber.id} 
-                        className={`relative transition-all duration-500 ${isActive ? 'scale-105' : ''}`}
+                        className={`relative transition-all duration-500 animate-fade-in`}
+                        style={{ animationDelay: `${index * 0.1}s` }}
                       >
                         <div 
-                          className={`barber p-6 rounded-xl border shadow-lg transition-all duration-300 ${
+                          className={`barber p-6 rounded-xl border shadow-lg transition-all duration-300 hover:scale-105 ${
                             barber.state === BarberState.SLEEPING 
                               ? 'bg-gradient-to-br from-gray-900/80 to-gray-800/60 border-gray-500/30' 
                               : isActive 
@@ -1155,7 +1199,7 @@ const Index = () => {
                         </div>
                         
                         {barber.servingCustomerId && (
-                          <div className="absolute -right-4 -top-4">
+                          <div className="absolute -right-4 -top-4 animate-bounce-gentle">
                             <div 
                               className={`${
                                 lastServedCustomer === barber.servingCustomerId 
@@ -1190,7 +1234,7 @@ const Index = () => {
             {/* Waiting Area & Recent Haircuts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Waiting Area */}
-              <Card className="border border-amber-500/20 bg-black/50 backdrop-blur-lg text-white">
+              <Card className="border border-amber-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-amber transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
                 <CardHeader className="border-b border-amber-500/20 bg-amber-900/40">
                   <CardTitle className="flex items-center justify-between text-amber-100">
                     <span className="flex items-center gap-2">
@@ -1218,8 +1262,8 @@ const Index = () => {
                           className="relative mb-3 overflow-hidden animate-fade-in"
                           style={{animationDelay: `${index * 0.1}s`}}
                         >
-                          <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-950/40 to-amber-900/20 rounded-lg border border-amber-500/20 shadow-lg">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center text-white shadow-lg">
+                          <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-950/40 to-amber-900/20 rounded-lg border border-amber-500/20 shadow-lg hover:border-amber-500/50 transition-colors duration-300 hover:translate-x-1 transform">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center text-white shadow-lg animate-pulse-slow">
                               <User className="w-5 h-5" />
                             </div>
                             <div className="flex-1 overflow-hidden">
@@ -1251,7 +1295,7 @@ const Index = () => {
               </Card>
               
               {/* Recent Haircuts */}
-              <Card className="border border-green-500/20 bg-black/50 backdrop-blur-lg text-white">
+              <Card className="border border-green-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-green transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.4s" }}>
                 <CardHeader className="border-b border-green-500/20 bg-green-900/40">
                   <CardTitle className="flex items-center gap-2 text-green-100">
                     <Scissors className="h-5 w-5 text-green-200" />
@@ -1272,7 +1316,7 @@ const Index = () => {
                         {servedCustomers.slice(-5).reverse().map((customer, idx) => (
                           <TableRow 
                             key={customer.id} 
-                            className={`hover:bg-green-800/20 border-b border-green-500/10 animate-fade-in`}
+                            className="hover:bg-green-800/20 border-b border-green-500/10 animate-fade-in hover:translate-x-1 transition-transform duration-300"
                             style={{animationDelay: `${idx * 0.1}s`}}
                           >
                             <TableCell className="font-medium text-green-200">{customer.name}</TableCell>
@@ -1297,38 +1341,136 @@ const Index = () => {
         </div>
       </div>
       
-      {/* CSS for animations */}
-      <style jsx global>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) rotate(0);
+      {/* CSS for animations - fixed the issue by correctly setting style tag */}
+      <style>
+        {`
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0) rotate(0);
+            }
+            25% {
+              transform: translateY(-20px) rotate(5deg);
+            }
+            50% {
+              transform: translateY(10px) rotate(-5deg);
+            }
+            75% {
+              transform: translateY(-5px) rotate(2deg);
+            }
           }
-          25% {
-            transform: translateY(-20px) rotate(5deg);
+          
+          @keyframes twinkle {
+            0%, 100% {
+              opacity: 0.3;
+              transform: scale(0.8);
+            }
+            50% {
+              opacity: 1;
+              transform: scale(1.2);
+            }
           }
-          50% {
-            transform: translateY(10px) rotate(-5deg);
+          
+          @keyframes fade-in {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
-          75% {
-            transform: translateY(-5px) rotate(2deg);
+          
+          @keyframes bounce-slow {
+            0%, 100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-10px);
+            }
           }
-        }
-        
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
+          
+          @keyframes bounce-gentle {
+            0%, 100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-4px);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          
+          @keyframes pulse-slow {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.6;
+            }
           }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-        }
-      `}</style>
+          
+          @keyframes spin-slow {
+            0% {
+              transform: rotate(0deg);
+            }
+            100% {
+              transform: rotate(360deg);
+            }
+          }
+          
+          @keyframes spin-slow-reverse {
+            0% {
+              transform: rotate(0deg);
+            }
+            100% {
+              transform: rotate(-360deg);
+            }
+          }
+          
+          .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+          }
+          
+          .animate-bounce-slow {
+            animation: bounce-slow 3s ease-in-out infinite;
+          }
+          
+          .animate-bounce-gentle {
+            animation: bounce-gentle 2s ease-in-out infinite;
+          }
+          
+          .animate-pulse-slow {
+            animation: pulse-slow 3s ease-in-out infinite;
+          }
+          
+          .animate-spin-slow {
+            animation: spin-slow 10s linear infinite;
+          }
+          
+          .animate-spin-slow-reverse {
+            animation: spin-slow-reverse 8s linear infinite;
+          }
+          
+          .hover\:shadow-glow-purple:hover {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+          }
+          
+          .hover\:shadow-glow-blue:hover {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+          }
+          
+          .hover\:shadow-glow-indigo:hover {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+          }
+          
+          .hover\:shadow-glow-amber:hover {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+          }
+          
+          .hover\:shadow-glow-green:hover {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+          }
+        `}
+      </style>
     </div>
   );
 };
