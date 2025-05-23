@@ -577,7 +577,7 @@ const Index = () => {
       const updatedNextCustomer = {
         ...nextCustomer,
         state: CustomerState.GETTING_HAIRCUT,
-        timeServed: newTime,
+        timeServed: currentTime,
         servedBy: barberId,
         serviceEndTime: nextServiceEndTime,
         waitingPosition: undefined
@@ -587,7 +587,7 @@ const Index = () => {
       updatedBarbers[barberIndex] = {
         ...updatedBarbers[barberIndex],
         servingCustomerId: nextCustomer.id,
-        currentServiceStartTime: newTime,
+        currentServiceStartTime: currentTime,
         serviceEndTime: nextServiceEndTime,
         state: BarberState.WORKING
       };
