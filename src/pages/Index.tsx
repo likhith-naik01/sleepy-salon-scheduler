@@ -97,7 +97,7 @@ const Index = () => {
     // Calculate wait time for each served customer (from arrival to when they started getting served)
     const totalWaitTime = servedCustomers.reduce((total, customer) => {
       // Calculate the waiting time (time from arrival until they were assigned to a barber)
-      const waitTime = (customer.timeServed || 0) - customer.timeArrived;
+      const waitTime = (customer.timeServed || customer.timeArrived) - customer.timeArrived;
       return total + waitTime;
     }, 0);
     
