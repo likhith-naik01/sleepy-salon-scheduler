@@ -90,15 +90,14 @@ const Index = () => {
   const particlesRef = useRef<HTMLDivElement>(null);
   const starsRef = useRef<HTMLDivElement>(null);
   
-  // Metrics - Fix average wait time calculation
+  // Metrics - Fixed average wait time calculation
   const averageWaitTime = React.useMemo(() => {
     if (servedCustomers.length === 0) return 0;
     
-    // Calculate wait time for each served customer (from arrival to when they started their haircut)
+    // Calculate wait time for each served customer (from arrival to when they started getting served)
     const totalWaitTime = servedCustomers.reduce((total, customer) => {
-      // Only count the actual waiting time (from arrival until they were served)
-      // This excludes the haircut service time itself
-      const waitTime = ((customer.timeServed || customer.timeArrived) - customer.timeArrived);
+      // Calculate the waiting time (time from arrival until they were assigned to a barber)
+      const waitTime = (customer.timeServed || 0) - customer.timeArrived;
       return total + waitTime;
     }, 0);
     
@@ -578,7 +577,7 @@ const Index = () => {
       const updatedNextCustomer = {
         ...nextCustomer,
         state: CustomerState.GETTING_HAIRCUT,
-        timeServed: currentTime,
+        timeServed: newTime,
         servedBy: barberId,
         serviceEndTime: nextServiceEndTime,
         waitingPosition: undefined
@@ -588,15 +587,15 @@ const Index = () => {
       updatedBarbers[barberIndex] = {
         ...updatedBarbers[barberIndex],
         servingCustomerId: nextCustomer.id,
-        currentServiceStartTime: currentTime,
+        currentServiceStartTime: newTime,
         serviceEndTime: nextServiceEndTime,
         state: BarberState.WORKING
       };
       
       // Add next customer to current customers list
-      setCurrentCustomers(prev => [...prev, updatedNextCustomer]);
+      updatedCurrentCustomers.push(updatedNextCustomer);
       
-      // Remove next customer from waiting list and update waiting positions
+      // Remove next customer from waiting list
       const newWaiting = waitingCustomers.slice(1).map((c, idx) => ({
         ...c,
         waitingPosition: idx
@@ -611,7 +610,7 @@ const Index = () => {
       // Show toast notification
       toast({
         title: "Next Customer",
-        description: `${finishedCustomer.name} finished haircut. ${nextCustomer.name} is now with Barber #${barberId}.`
+        description: `${finishedCustomer.name} finished haircut. ${nextCustomer.name} is now with Barber #${barberId + 1}.`
       });
     } else {
       // No customers waiting, barber goes to sleep
@@ -626,7 +625,7 @@ const Index = () => {
       // Show toast notification
       toast({
         title: "Barber Sleeping",
-        description: `${customer.name} finished their haircut. Barber #${barberId} is now sleeping as there are no more customers.`
+        description: `${customer.name} finished their haircut. Barber #${barberId + 1} is now sleeping as there are no more customers.`
       });
     }
     
