@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, User, Users, Scissors, Play, Pause, Bell, BellRing, Sparkles } from "lucide-react";
+import { Clock, User, Users, Scissors, Play, Pause, Bell, BellRing, Sparkles, Info, Code, Lightbulb } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -911,433 +911,582 @@ const Index = () => {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left panel - Controls */}
-          <div className="lg:col-span-1 space-y-6 animate-fade-in">
-            {/* Controls Panel */}
-            <Card className="border border-purple-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden hover:shadow-glow-purple transition-all duration-500">
-              <CardHeader className="border-b border-purple-500/20 bg-purple-900/40">
-                <CardTitle className="flex items-center gap-2 text-purple-100">
-                  <Clock className="h-5 w-5 text-purple-200" />
-                  Controls
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="numBarbers" className="text-sm text-purple-200 mb-1 block">Barbers: {numBarbers}</Label>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => updateBarberCount(numBarbers - 1)}
-                          disabled={numBarbers <= 1}
-                          className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
-                        >
-                          -
-                        </Button>
-                        <Slider
-                          id="numBarbers"
-                          min={1}
-                          max={5}
-                          step={1}
-                          value={[numBarbers]}
-                          onValueChange={(values) => updateBarberCount(values[0])}
-                          className="flex-1"
+        <Tabs defaultValue="simulation" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-black/50 backdrop-blur-lg border border-purple-500/20">
+            <TabsTrigger value="simulation" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-purple-200">
+              Simulation
+            </TabsTrigger>
+            <TabsTrigger value="explanation" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-purple-200">
+              <Info className="h-4 w-4 mr-2" />
+              About & Technologies
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="simulation" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Left panel - Controls */}
+              <div className="lg:col-span-1 space-y-6 animate-fade-in">
+                {/* Controls Panel */}
+                <Card className="border border-purple-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden hover:shadow-glow-purple transition-all duration-500">
+                  <CardHeader className="border-b border-purple-500/20 bg-purple-900/40">
+                    <CardTitle className="flex items-center gap-2 text-purple-100">
+                      <Clock className="h-5 w-5 text-purple-200" />
+                      Controls
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="numBarbers" className="text-sm text-purple-200 mb-1 block">Barbers: {numBarbers}</Label>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateBarberCount(numBarbers - 1)}
+                              disabled={numBarbers <= 1}
+                              className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
+                            >
+                              -
+                            </Button>
+                            <Slider
+                              id="numBarbers"
+                              min={1}
+                              max={5}
+                              step={1}
+                              value={[numBarbers]}
+                              onValueChange={(values) => updateBarberCount(values[0])}
+                              className="flex-1"
+                            />
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateBarberCount(numBarbers + 1)}
+                              disabled={numBarbers >= 5}
+                              className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="numChairs" className="text-sm text-purple-200 mb-1 block">Waiting Chairs: {numChairs}</Label>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateChairCount(numChairs - 1)}
+                              disabled={numChairs <= 1}
+                              className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
+                            >
+                              -
+                            </Button>
+                            <Slider
+                              id="numChairs"
+                              min={1}
+                              max={10}
+                              step={1}
+                              value={[numChairs]}
+                              onValueChange={(values) => updateChairCount(values[0])}
+                              className="flex-1"
+                            />
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateChairCount(numChairs + 1)}
+                              disabled={numChairs >= 10}
+                              className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="serviceTime" className="text-sm text-purple-200 mb-1 block">Service Time: {serviceTime}s</Label>
+                          <Slider
+                            id="serviceTime"
+                            min={5}
+                            max={30}
+                            step={1}
+                            value={[serviceTime]}
+                            onValueChange={(values) => setServiceTime(values[0])}
+                            className="flex-1"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="arrivalRate" className="text-sm text-purple-200 mb-1 block">Arrival Rate: {arrivalRate}/min</Label>
+                          <Slider
+                            id="arrivalRate"
+                            min={1}
+                            max={12}
+                            step={1}
+                            value={[arrivalRate]}
+                            onValueChange={(values) => setArrivalRate(values[0])}
+                            className="flex-1"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="simulationSpeed" className="text-sm text-purple-200 mb-1 block">Speed: {simulationSpeed}x</Label>
+                          <Slider
+                            id="simulationSpeed"
+                            min={0.5}
+                            max={5}
+                            step={0.5}
+                            value={[simulationSpeed]}
+                            onValueChange={(values) => setSimulationSpeed(values[0])}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Quick add customer */}
+                      <form onSubmit={handleBooking} className="flex items-center gap-2">
+                        <Input
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          placeholder="Customer name"
+                          className="bg-purple-900/40 border-purple-500/30 text-purple-100 placeholder:text-purple-300/50 flex-1"
                         />
                         <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateBarberCount(numBarbers + 1)}
-                          disabled={numBarbers >= 5}
-                          className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
+                          type="submit" 
+                          className="bg-pink-600 hover:bg-pink-700 text-white"
                         >
-                          +
+                          Add
                         </Button>
-                      </div>
+                      </form>
                     </div>
-                    
-                    <div>
-                      <Label htmlFor="numChairs" className="text-sm text-purple-200 mb-1 block">Waiting Chairs: {numChairs}</Label>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => updateChairCount(numChairs - 1)}
-                          disabled={numChairs <= 1}
-                          className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
-                        >
-                          -
-                        </Button>
-                        <Slider
-                          id="numChairs"
-                          min={1}
-                          max={10}
-                          step={1}
-                          value={[numChairs]}
-                          onValueChange={(values) => updateChairCount(values[0])}
-                          className="flex-1"
-                        />
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateChairCount(numChairs + 1)}
-                          disabled={numChairs >= 10}
-                          className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 h-8 w-8 p-0"
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="serviceTime" className="text-sm text-purple-200 mb-1 block">Service Time: {serviceTime}s</Label>
-                      <Slider
-                        id="serviceTime"
-                        min={5}
-                        max={30}
-                        step={1}
-                        value={[serviceTime]}
-                        onValueChange={(values) => setServiceTime(values[0])}
-                        className="flex-1"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="arrivalRate" className="text-sm text-purple-200 mb-1 block">Arrival Rate: {arrivalRate}/min</Label>
-                      <Slider
-                        id="arrivalRate"
-                        min={1}
-                        max={12}
-                        step={1}
-                        value={[arrivalRate]}
-                        onValueChange={(values) => setArrivalRate(values[0])}
-                        className="flex-1"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="simulationSpeed" className="text-sm text-purple-200 mb-1 block">Speed: {simulationSpeed}x</Label>
-                      <Slider
-                        id="simulationSpeed"
-                        min={0.5}
-                        max={5}
-                        step={0.5}
-                        value={[simulationSpeed]}
-                        onValueChange={(values) => setSimulationSpeed(values[0])}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Quick add customer */}
-                  <form onSubmit={handleBooking} className="flex items-center gap-2">
-                    <Input
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Customer name"
-                      className="bg-purple-900/40 border-purple-500/30 text-purple-100 placeholder:text-purple-300/50 flex-1"
-                    />
+                  </CardContent>
+                  <CardFooter className="border-t border-purple-500/20 flex justify-between pt-4 pb-4 bg-purple-900/20">
                     <Button 
-                      type="submit" 
-                      className="bg-pink-600 hover:bg-pink-700 text-white"
+                      variant="outline" 
+                      onClick={resetSimulation}
+                      className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 hover:scale-105 transition-transform duration-300"
                     >
-                      Add
+                      Reset
                     </Button>
-                  </form>
-                </div>
-              </CardContent>
-              <CardFooter className="border-t border-purple-500/20 flex justify-between pt-4 pb-4 bg-purple-900/20">
-                <Button 
-                  variant="outline" 
-                  onClick={resetSimulation}
-                  className="bg-purple-900/50 border-purple-500/30 hover:bg-purple-800/80 text-purple-100 hover:scale-105 transition-transform duration-300"
-                >
-                  Reset
-                </Button>
-                {isRunning && !isPaused ? (
-                  <Button 
-                    variant="secondary" 
-                    onClick={togglePauseSimulation}
-                    className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white hover:scale-105 transition-transform duration-300"
-                  >
-                    <Pause className="h-4 w-4" />
-                    Pause
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="default" 
-                    onClick={startHaircuts} 
-                    className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105 transition-transform duration-300"
-                  >
-                    <Play className="h-4 w-4" />
-                    {isPaused ? "Resume" : "Start"}
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-            
-            {/* Stats */}
-            <Card className="border border-blue-500/20 bg-black/40 backdrop-blur-lg text-white hover:shadow-glow-blue transition-all duration-500">
-              <CardHeader className="border-b border-blue-500/20 bg-blue-900/40">
-                <CardTitle className="flex items-center gap-2 text-blue-100">
-                  <Users className="h-5 w-5 text-blue-200" />
-                  Statistics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 p-4 rounded-xl border border-green-500/20 flex flex-col items-center justify-center">
-                    <div className="text-2xl font-bold text-green-300">{servedCustomers.length}</div>
-                    <div className="text-xs text-green-200 text-center">Served</div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 p-4 rounded-xl border border-blue-500/20 flex flex-col items-center justify-center">
-                    <div className="text-2xl font-bold text-blue-300">{waitingCustomers.length}</div>
-                    <div className="text-xs text-blue-200 text-center">Waiting</div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-red-900/40 to-red-800/20 p-4 rounded-xl border border-red-500/20 flex flex-col items-center justify-center">
-                    <div className="text-2xl font-bold text-red-300">{turnedAwayCustomers.length}</div>
-                    <div className="text-xs text-red-200 text-center">Turned Away</div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-yellow-900/40 to-yellow-800/20 p-4 rounded-xl border border-yellow-500/20 flex flex-col items-center justify-center">
-                    <div className="text-2xl font-bold text-yellow-300">{averageWaitTime.toFixed(1)}s</div>
-                    <div className="text-xs text-yellow-200 text-center">Avg Wait</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Right panel - Main visualization */}
-          <div className="lg:col-span-3 space-y-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            {/* Barber Stations */}
-            <Card className="border border-indigo-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden hover:shadow-glow-indigo transition-all duration-500">
-              <CardHeader className="border-b border-indigo-500/20 bg-indigo-900/40">
-                <CardTitle className="flex items-center gap-2 text-indigo-100">
-                  <Scissors className="h-5 w-5 text-indigo-200" />
-                  Barber Stations
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="barber-shop-floor grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
-                  {barbers.map((barber, index) => {
-                    const customer = getCustomerById(barber.servingCustomerId);
-                    const serviceProgress = getServiceProgress(barber);
-                    const timeRemaining = getTimeRemaining(barber);
-                    const isActive = lastActiveBarber === index;
-                    
-                    return (
-                      <div 
-                        key={barber.id} 
-                        className={`relative transition-all duration-500 animate-fade-in`}
-                        style={{ animationDelay: `${index * 0.1}s` }}
+                    {isRunning && !isPaused ? (
+                      <Button 
+                        variant="secondary" 
+                        onClick={togglePauseSimulation}
+                        className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white hover:scale-105 transition-transform duration-300"
                       >
-                        <div 
-                          className={`barber p-6 rounded-xl border shadow-lg transition-all duration-300 hover:scale-105 ${
-                            barber.state === BarberState.SLEEPING 
-                              ? 'bg-gradient-to-br from-gray-900/80 to-gray-800/60 border-gray-500/30' 
-                              : isActive 
-                                ? 'bg-gradient-to-br from-green-900/80 to-green-800/60 border-green-500/50 animate-pulse shadow-green-500/20' 
-                                : 'bg-gradient-to-br from-green-900/60 to-green-800/40 border-green-500/30'
-                          }`}
-                        >
-                          <div className="flex flex-col items-center space-y-3">
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                              barber.state === BarberState.SLEEPING 
-                                ? 'bg-gray-700/60'
-                                : 'bg-green-700/60'
-                            }`}>
-                              <Scissors 
-                                className={`w-8 h-8 transition-all duration-300 ${
-                                  barber.state === BarberState.SLEEPING 
-                                    ? 'text-gray-400' 
-                                    : isActive 
-                                      ? 'text-green-300 animate-[spin_3s_linear_infinite]' 
-                                      : 'text-green-300'
-                                }`} 
-                              />
-                            </div>
-                            <div className="mt-2 text-center font-medium">
-                              <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
-                                Barber #{barber.id}
-                              </span>
-                            </div>
+                        <Pause className="h-4 w-4" />
+                        Pause
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        onClick={startHaircuts} 
+                        className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105 transition-transform duration-300"
+                      >
+                        <Play className="h-4 w-4" />
+                        {isPaused ? "Resume" : "Start"}
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+                
+                {/* Stats */}
+                <Card className="border border-blue-500/20 bg-black/40 backdrop-blur-lg text-white hover:shadow-glow-blue transition-all duration-500">
+                  <CardHeader className="border-b border-blue-500/20 bg-blue-900/40">
+                    <CardTitle className="flex items-center gap-2 text-blue-100">
+                      <Users className="h-5 w-5 text-blue-200" />
+                      Statistics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 p-4 rounded-xl border border-green-500/20 flex flex-col items-center justify-center">
+                        <div className="text-2xl font-bold text-green-300">{servedCustomers.length}</div>
+                        <div className="text-xs text-green-200 text-center">Served</div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 p-4 rounded-xl border border-blue-500/20 flex flex-col items-center justify-center">
+                        <div className="text-2xl font-bold text-blue-300">{waitingCustomers.length}</div>
+                        <div className="text-xs text-blue-200 text-center">Waiting</div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-red-900/40 to-red-800/20 p-4 rounded-xl border border-red-500/20 flex flex-col items-center justify-center">
+                        <div className="text-2xl font-bold text-red-300">{turnedAwayCustomers.length}</div>
+                        <div className="text-xs text-red-200 text-center">Turned Away</div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-yellow-900/40 to-yellow-800/20 p-4 rounded-xl border border-yellow-500/20 flex flex-col items-center justify-center">
+                        <div className="text-2xl font-bold text-yellow-300">{averageWaitTime.toFixed(1)}s</div>
+                        <div className="text-xs text-yellow-200 text-center">Avg Wait</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Right panel - Main visualization */}
+              <div className="lg:col-span-3 space-y-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                {/* Barber Stations */}
+                <Card className="border border-indigo-500/20 bg-black/50 backdrop-blur-lg text-white overflow-hidden hover:shadow-glow-indigo transition-all duration-500">
+                  <CardHeader className="border-b border-indigo-500/20 bg-indigo-900/40">
+                    <CardTitle className="flex items-center gap-2 text-indigo-100">
+                      <Scissors className="h-5 w-5 text-indigo-200" />
+                      Barber Stations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="barber-shop-floor grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+                      {barbers.map((barber, index) => {
+                        const customer = getCustomerById(barber.servingCustomerId);
+                        const serviceProgress = getServiceProgress(barber);
+                        const timeRemaining = getTimeRemaining(barber);
+                        const isActive = lastActiveBarber === index;
+                        
+                        return (
+                          <div 
+                            key={barber.id} 
+                            className={`relative transition-all duration-500 animate-fade-in`}
+                            style={{ animationDelay: `${index * 0.1}s` }}
+                          >
                             <div 
-                              className={`px-3 py-1 rounded-full text-xs text-center font-medium ${
+                              className={`barber p-6 rounded-xl border shadow-lg transition-all duration-300 hover:scale-105 ${
                                 barber.state === BarberState.SLEEPING 
-                                  ? 'bg-gray-700/50 text-gray-300' 
-                                  : 'bg-green-700/50 text-green-300'
+                                  ? 'bg-gradient-to-br from-gray-900/80 to-gray-800/60 border-gray-500/30' 
+                                  : isActive 
+                                    ? 'bg-gradient-to-br from-green-900/80 to-green-800/60 border-green-500/50 animate-pulse shadow-green-500/20' 
+                                    : 'bg-gradient-to-br from-green-900/60 to-green-800/40 border-green-500/30'
                               }`}
                             >
-                              {barber.state === BarberState.SLEEPING ? 'Sleeping' : 'Working'}
-                            </div>
-                            
-                            {barber.state === BarberState.WORKING && customer && (
-                              <div className="mt-2 w-full">
-                                <div className="rounded-lg bg-indigo-900/30 border border-indigo-500/20 p-3">
-                                  <div className="flex justify-between items-center mb-2">
-                                    <div className="text-sm font-medium text-indigo-300">{customer.name}</div>
-                                    <div className="text-xs font-bold text-blue-300 bg-blue-900/50 px-2 py-0.5 rounded-full">
-                                      {timeRemaining.toFixed(1)}s
+                              <div className="flex flex-col items-center space-y-3">
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                                  barber.state === BarberState.SLEEPING 
+                                    ? 'bg-gray-700/60'
+                                    : 'bg-green-700/60'
+                                }`}>
+                                  <Scissors 
+                                    className={`w-8 h-8 transition-all duration-300 ${
+                                      barber.state === BarberState.SLEEPING 
+                                        ? 'text-gray-400' 
+                                        : isActive 
+                                          ? 'text-green-300 animate-[spin_3s_linear_infinite]' 
+                                          : 'text-green-300'
+                                    }`} 
+                                  />
+                                </div>
+                                <div className="mt-2 text-center font-medium">
+                                  <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
+                                    Barber #{barber.id}
+                                  </span>
+                                </div>
+                                <div 
+                                  className={`px-3 py-1 rounded-full text-xs text-center font-medium ${
+                                    barber.state === BarberState.SLEEPING 
+                                      ? 'bg-gray-700/50 text-gray-300' 
+                                      : 'bg-green-700/50 text-green-300'
+                                  }`}
+                                >
+                                  {barber.state === BarberState.SLEEPING ? 'Sleeping' : 'Working'}
+                                </div>
+                                
+                                {barber.state === BarberState.WORKING && customer && (
+                                  <div className="mt-2 w-full">
+                                    <div className="rounded-lg bg-indigo-900/30 border border-indigo-500/20 p-3">
+                                      <div className="flex justify-between items-center mb-2">
+                                        <div className="text-sm font-medium text-indigo-300">{customer.name}</div>
+                                        <div className="text-xs font-bold text-blue-300 bg-blue-900/50 px-2 py-0.5 rounded-full">
+                                          {timeRemaining.toFixed(1)}s
+                                        </div>
+                                      </div>
+                                      <Progress 
+                                        value={serviceProgress} 
+                                        className="h-3 bg-indigo-900/50"
+                                        onComplete={() => handleServiceComplete(barber.id)}
+                                        duration={timeRemaining}
+                                      />
                                     </div>
                                   </div>
-                                  <Progress 
-                                    value={serviceProgress} 
-                                    className="h-3 bg-indigo-900/50"
-                                    onComplete={() => handleServiceComplete(barber.id)}
-                                    duration={timeRemaining}
-                                  />
+                                )}
+                              </div>
+                            </div>
+                            
+                            {barber.servingCustomerId && (
+                              <div className="absolute -right-4 -top-4 animate-bounce-gentle">
+                                <div 
+                                  className={`${
+                                    lastServedCustomer === barber.servingCustomerId 
+                                      ? 'bg-blue-500 animate-pulse' 
+                                      : 'bg-blue-700'
+                                  } text-white p-2 rounded-full flex items-center justify-center shadow-xl shadow-blue-500/30`}
+                                >
+                                  <User className="w-4 h-4" />
                                 </div>
                               </div>
                             )}
-                          </div>
-                        </div>
-                        
-                        {barber.servingCustomerId && (
-                          <div className="absolute -right-4 -top-4 animate-bounce-gentle">
-                            <div 
-                              className={`${
-                                lastServedCustomer === barber.servingCustomerId 
-                                  ? 'bg-blue-500 animate-pulse' 
-                                  : 'bg-blue-700'
-                              } text-white p-2 rounded-full flex items-center justify-center shadow-xl shadow-blue-500/30`}
-                            >
-                              <User className="w-4 h-4" />
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Served counter badge */}
-                        <div className="absolute -left-2 -top-2">
-                          <div className="bg-purple-700/80 text-white p-1 px-2 rounded-full text-xs shadow-lg">
-                            {barber.totalCustomersServed} ✓
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {barbers.length === 0 && (
-                    <div className="col-span-full text-center py-12 text-gray-400">
-                      No barbers available. Press "Start" to initialize the simulation.
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Waiting Area & Recent Haircuts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Waiting Area */}
-              <Card className="border border-amber-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-amber transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                <CardHeader className="border-b border-amber-500/20 bg-amber-900/40">
-                  <CardTitle className="flex items-center justify-between text-amber-100">
-                    <span className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-amber-200" />
-                      Waiting Area ({waitingCustomers.length}/{numChairs})
-                    </span>
-                    {waitingCustomers.length > 0 && (
-                      <span className="text-xs bg-amber-600/50 text-amber-200 px-2 py-1 rounded-full">
-                        Customers Waiting
-                      </span>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="waiting-area max-h-[300px] overflow-y-auto bg-amber-950/20 p-3">
-                    {waitingCustomers.map((customer, index) => {
-                      const waitingTime = currentTime - customer.timeArrived;
-                      let urgencyColor = 'bg-blue-900/50 text-blue-300 border-blue-500/30';
-                      if (waitingTime > 30) urgencyColor = 'bg-red-900/50 text-red-300 border-red-500/30';
-                      else if (waitingTime > 15) urgencyColor = 'bg-amber-900/50 text-amber-300 border-amber-500/30';
-                      
-                      return (
-                        <div 
-                          key={customer.id} 
-                          className="relative mb-3 overflow-hidden animate-fade-in"
-                          style={{animationDelay: `${index * 0.1}s`}}
-                        >
-                          <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-950/40 to-amber-900/20 rounded-lg border border-amber-500/20 shadow-lg hover:border-amber-500/50 transition-colors duration-300 hover:translate-x-1 transform">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center text-white shadow-lg animate-pulse-slow">
-                              <User className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                              <div className="text-sm font-medium text-amber-200">{customer.name}</div>
-                              <div className="flex justify-between items-center">
-                                <div className="text-xs text-amber-400/70">Position: {index + 1}</div>
-                                <div className={`text-xs px-2 py-0.5 rounded-full border ${urgencyColor}`}>
-                                  {formatTime(waitingTime)}
-                                </div>
+                            
+                            {/* Served counter badge */}
+                            <div className="absolute -left-2 -top-2">
+                              <div className="bg-purple-700/80 text-white p-1 px-2 rounded-full text-xs shadow-lg">
+                                {barber.totalCustomersServed} ✓
                               </div>
                             </div>
                           </div>
-                          
-                          {/* Position indicator */}
-                          <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-amber-600 border-2 border-amber-400 flex items-center justify-center text-[10px] font-bold text-white">
-                            {index + 1}
-                          </div>
+                        );
+                      })}
+                      
+                      {barbers.length === 0 && (
+                        <div className="col-span-full text-center py-12 text-gray-400">
+                          No barbers available. Press "Start" to initialize the simulation.
                         </div>
-                      );
-                    })}
-                    
-                    {waitingCustomers.length === 0 && (
-                      <div className="text-center py-8 text-gray-400">
-                        No customers waiting
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Waiting Area & Recent Haircuts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Waiting Area */}
+                  <Card className="border border-amber-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-amber transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+                    <CardHeader className="border-b border-amber-500/20 bg-amber-900/40">
+                      <CardTitle className="flex items-center justify-between text-amber-100">
+                        <span className="flex items-center gap-2">
+                          <Users className="h-5 w-5 text-amber-200" />
+                          Waiting Area ({waitingCustomers.length}/{numChairs})
+                        </span>
+                        {waitingCustomers.length > 0 && (
+                          <span className="text-xs bg-amber-600/50 text-amber-200 px-2 py-1 rounded-full">
+                            Customers Waiting
+                          </span>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="waiting-area max-h-[300px] overflow-y-auto bg-amber-950/20 p-3">
+                        {waitingCustomers.map((customer, index) => {
+                          const waitingTime = currentTime - customer.timeArrived;
+                          let urgencyColor = 'bg-blue-900/50 text-blue-300 border-blue-500/30';
+                          if (waitingTime > 30) urgencyColor = 'bg-red-900/50 text-red-300 border-red-500/30';
+                          else if (waitingTime > 15) urgencyColor = 'bg-amber-900/50 text-amber-300 border-amber-500/30';
+                          
+                          return (
+                            <div 
+                              key={customer.id} 
+                              className="relative mb-3 overflow-hidden animate-fade-in"
+                              style={{animationDelay: `${index * 0.1}s`}}
+                            >
+                              <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-950/40 to-amber-900/20 rounded-lg border border-amber-500/20 shadow-lg hover:border-amber-500/50 transition-colors duration-300 hover:translate-x-1 transform">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center text-white shadow-lg animate-pulse-slow">
+                                  <User className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                  <div className="text-sm font-medium text-amber-200">{customer.name}</div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-xs text-amber-400/70">Position: {index + 1}</div>
+                                    <div className={`text-xs px-2 py-0.5 rounded-full border ${urgencyColor}`}>
+                                      {formatTime(waitingTime)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Position indicator */}
+                              <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-amber-600 border-2 border-amber-400 flex items-center justify-center text-[10px] font-bold text-white">
+                                {index + 1}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        {waitingCustomers.length === 0 && (
+                          <div className="text-center py-8 text-gray-400">
+                            No customers waiting
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Recent Haircuts */}
+                  <Card className="border border-green-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-green transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+                    <CardHeader className="border-b border-green-500/20 bg-green-900/40">
+                      <CardTitle className="flex items-center gap-2 text-green-100">
+                        <Scissors className="h-5 w-5 text-green-200" />
+                        Recent Haircuts
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="recent-haircuts max-h-[300px] overflow-y-auto">
+                        <Table>
+                          <TableHeader className="bg-green-950/50">
+                            <TableRow className="hover:bg-green-900/30 border-b border-green-500/20">
+                              <TableHead className="text-green-300">Customer</TableHead>
+                              <TableHead className="text-green-300">Barber</TableHead>
+                              <TableHead className="text-green-300 text-right">Wait</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {servedCustomers.slice(-5).reverse().map((customer, idx) => (
+                              <TableRow 
+                                key={customer.id} 
+                                className="hover:bg-green-800/20 border-b border-green-500/10 animate-fade-in hover:translate-x-1 transition-transform duration-300"
+                                style={{animationDelay: `${idx * 0.1}s`}}
+                              >
+                                <TableCell className="font-medium text-green-200">{customer.name}</TableCell>
+                                <TableCell className="text-green-300">#{customer.servedBy}</TableCell>
+                                <TableCell className="text-right text-green-300">{((customer.timeServed || 0) - customer.timeArrived).toFixed(1)}s</TableCell>
+                              </TableRow>
+                            ))}
+                            {servedCustomers.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={3} className="text-center py-4 text-gray-400">
+                                  No customers have been served yet
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="explanation" className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Technologies Used */}
+              <Card className="border border-blue-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-blue transition-all duration-500">
+                <CardHeader className="border-b border-blue-500/20 bg-blue-900/40">
+                  <CardTitle className="flex items-center gap-2 text-blue-100">
+                    <Code className="h-5 w-5 text-blue-200" />
+                    Technologies Used
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gradient-to-br from-blue-900/40 to-blue-800/20 rounded-xl border border-blue-500/20">
+                      <h3 className="font-semibold text-blue-300 mb-2">Frontend Framework</h3>
+                      <p className="text-blue-100 text-sm mb-2"><strong>React 18</strong> with TypeScript</p>
+                      <p className="text-blue-200/80 text-xs">Component-based UI library for building interactive user interfaces</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-purple-900/40 to-purple-800/20 rounded-xl border border-purple-500/20">
+                      <h3 className="font-semibold text-purple-300 mb-2">Styling & UI</h3>
+                      <p className="text-purple-100 text-sm mb-2"><strong>Tailwind CSS</strong> + <strong>shadcn/ui</strong></p>
+                      <p className="text-purple-200/80 text-xs">Utility-first CSS framework with pre-built accessible components</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-green-900/40 to-green-800/20 rounded-xl border border-green-500/20">
+                      <h3 className="font-semibold text-green-300 mb-2">State Management</h3>
+                      <p className="text-green-100 text-sm mb-2"><strong>React Hooks</strong> (useState, useEffect, useRef)</p>
+                      <p className="text-green-200/80 text-xs">Built-in React state management for component-level state</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-amber-900/40 to-amber-800/20 rounded-xl border border-amber-500/20">
+                      <h3 className="font-semibold text-amber-300 mb-2">Animation</h3>
+                      <p className="text-amber-100 text-sm mb-2"><strong>CSS Animations</strong> + <strong>requestAnimationFrame</strong></p>
+                      <p className="text-amber-200/80 text-xs">Custom keyframes and smooth real-time simulation updates</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 rounded-xl border border-indigo-500/20">
+                      <h3 className="font-semibold text-indigo-300 mb-2">Icons & Components</h3>
+                      <p className="text-indigo-100 text-sm mb-2"><strong>Lucide React</strong> + <strong>Radix UI</strong></p>
+                      <p className="text-indigo-200/80 text-xs">Beautiful icons and accessible UI primitives</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              
-              {/* Recent Haircuts */}
-              <Card className="border border-green-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-green transition-all duration-500 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+
+              {/* Simulation Explanation */}
+              <Card className="border border-green-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-green transition-all duration-500">
                 <CardHeader className="border-b border-green-500/20 bg-green-900/40">
                   <CardTitle className="flex items-center gap-2 text-green-100">
-                    <Scissors className="h-5 w-5 text-green-200" />
-                    Recent Haircuts
+                    <Lightbulb className="h-5 w-5 text-green-200" />
+                    How It Works
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <div className="recent-haircuts max-h-[300px] overflow-y-auto">
-                    <Table>
-                      <TableHeader className="bg-green-950/50">
-                        <TableRow className="hover:bg-green-900/30 border-b border-green-500/20">
-                          <TableHead className="text-green-300">Customer</TableHead>
-                          <TableHead className="text-green-300">Barber</TableHead>
-                          <TableHead className="text-green-300 text-right">Wait</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {servedCustomers.slice(-5).reverse().map((customer, idx) => (
-                          <TableRow 
-                            key={customer.id} 
-                            className="hover:bg-green-800/20 border-b border-green-500/10 animate-fade-in hover:translate-x-1 transition-transform duration-300"
-                            style={{animationDelay: `${idx * 0.1}s`}}
-                          >
-                            <TableCell className="font-medium text-green-200">{customer.name}</TableCell>
-                            <TableCell className="text-green-300">#{customer.servedBy}</TableCell>
-                            <TableCell className="text-right text-green-300">{((customer.timeServed || 0) - customer.timeArrived).toFixed(1)}s</TableCell>
-                          </TableRow>
-                        ))}
-                        {servedCustomers.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={3} className="text-center py-4 text-gray-400">
-                              No customers have been served yet
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gradient-to-br from-green-900/40 to-green-800/20 rounded-xl border border-green-500/20">
+                      <h3 className="font-semibold text-green-300 mb-2">The Sleeping Barber Problem</h3>
+                      <p className="text-green-200/80 text-sm">
+                        A classic computer science problem in concurrency and synchronization. 
+                        A barber shop has one or more barbers, a limited number of waiting chairs, 
+                        and customers arriving at random intervals.
+                      </p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-blue-900/40 to-blue-800/20 rounded-xl border border-blue-500/20">
+                      <h3 className="font-semibold text-blue-300 mb-2">Simulation Rules</h3>
+                      <ul className="text-blue-200/80 text-sm space-y-1">
+                        <li>• Barbers sleep when no customers are present</li>
+                        <li>• Customers wake up sleeping barbers</li>
+                        <li>• If all barbers are busy, customers wait in chairs</li>
+                        <li>• If all chairs are full, customers are turned away</li>
+                        <li>• Haircuts take a configurable amount of time</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-purple-900/40 to-purple-800/20 rounded-xl border border-purple-500/20">
+                      <h3 className="font-semibold text-purple-300 mb-2">Real-time Features</h3>
+                      <ul className="text-purple-200/80 text-sm space-y-1">
+                        <li>• Live progress bars for active haircuts</li>
+                        <li>• Dynamic wait time calculations</li>
+                        <li>• Interactive customer booking</li>
+                        <li>• Configurable simulation parameters</li>
+                        <li>• Statistical tracking and analysis</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-amber-900/40 to-amber-800/20 rounded-xl border border-amber-500/20">
+                      <h3 className="font-semibold text-amber-300 mb-2">Key Metrics</h3>
+                      <ul className="text-amber-200/80 text-sm space-y-1">
+                        <li>• <strong>Average Wait Time:</strong> Time from arrival to service start</li>
+                        <li>• <strong>Customers Served:</strong> Total successful haircuts</li>
+                        <li>• <strong>Currently Waiting:</strong> Queue length</li>
+                        <li>• <strong>Turned Away:</strong> Customers who couldn't wait</li>
+                      </ul>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </div>
-        </div>
+
+            {/* Additional Information */}
+            <Card className="border border-indigo-500/20 bg-black/50 backdrop-blur-lg text-white hover:shadow-glow-indigo transition-all duration-500">
+              <CardHeader className="border-b border-indigo-500/20 bg-indigo-900/40">
+                <CardTitle className="flex items-center gap-2 text-indigo-100">
+                  <Sparkles className="h-5 w-5 text-indigo-200" />
+                  Implementation Highlights
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-gradient-to-br from-pink-900/40 to-pink-800/20 rounded-xl border border-pink-500/20">
+                    <h3 className="font-semibold text-pink-300 mb-2">Performance</h3>
+                    <p className="text-pink-200/80 text-sm">
+                      Uses requestAnimationFrame for smooth 60fps animations and efficient state updates
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 rounded-xl border border-cyan-500/20">
+                    <h3 className="font-semibold text-cyan-300 mb-2">Responsive Design</h3>
+                    <p className="text-cyan-200/80 text-sm">
+                      Fully responsive layout that works on desktop, tablet, and mobile devices
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-br from-orange-900/40 to-orange-800/20 rounded-xl border border-orange-500/20">
+                    <h3 className="font-semibold text-orange-300 mb-2">Interactive UI</h3>
+                    <p className="text-orange-200/80 text-sm">
+                      Real-time controls, toast notifications, and visual feedback for all user actions
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
       
       {/* CSS for animations - fixed the issue by correctly setting style tag */}
